@@ -1,14 +1,23 @@
-# Environment secrets — never commit this
+# Environment & secrets
 .env
+*.env
+
+# Database
+db.sqlite3
 
 # Python
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
+venv/
+.venv/
+*.egg-info/
 
-# Django
-db.sqlite3
-*.log
+# Media uploads
 media/
-staticfiles/
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
