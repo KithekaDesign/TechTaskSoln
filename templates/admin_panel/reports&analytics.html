@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TechTaskSoln - Reports &amp; Analytics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#add8e6",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#141c1e",
+                        "navy-custom": "#1e293b",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+
+// Add this at the top of the <script> block in each admin template
+document.addEventListener('DOMContentLoaded', async () => {
+    const user = await getCurrentUser(); // your existing api.js helper
+    if (!user || !user.is_staff) {
+        window.location.href = '/login/';
+        return;
+    }
+    // ... rest of page init
+});
+
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-navy-custom dark:text-slate-100">
+<!-- Sidebar + Overlay injected by sidebar.js -->
+
+<!-- Sidebar -->
+<!-- Main Content -->
+<main class="min-h-screen">
+<!-- Header -->
+<header class="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8">
+<button id="hamburger-btn" onclick="toggleSidebar()" class="flex items-center justify-center size-10 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300 mr-4" aria-label="Toggle sidebar">
+    <span class="material-symbols-outlined text-2xl">menu</span>
+</button>
+<h2 class="text-xl font-bold">Reports &amp; Analytics</h2>
+<div class="flex items-center gap-6">
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+<input class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/50" placeholder="Search reports..." type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors relative">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-400">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+</button>
+<div class="h-8 w-[1px] bg-slate-200 dark:border-slate-700 mx-1"></div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+<p class="text-sm font-bold leading-none">Alex Morgan</p>
+<p class="text-xs text-slate-500 mt-1">Super Admin</p>
+</div>
+<div class="size-10 rounded-full bg-slate-200 bg-cover bg-center border-2 border-primary/20" data-alt="Corporate headshot of admin user Alex Morgan" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD3IExdWGpUjQ9XIRwqlLRIfUHb78Nfza_ZAqUFc2wV9hhses8o56BipYsZTsWf9gQhpE0NASm0y2QnoPXx2XHii-2SRL4NN_bY9_rt4oMeJhVPA91ZSl9qE54TyvmIbwZeWoTIKbD9hFWzTrwpQV43qHMHe6R4aZWTb_WBhYBZOqLCRGjPObEYHB1fHp8heEmouu1WsS5Yhc7Lkp-XlpaccVprMKiFzlGem1sh1RZMmmMBBqz-M5ir4X-X_LnE0AuStfprxshFBult')"></div>
+</div>
+</div>
+</div>
+</header>
+<!-- Content Area -->
+<div class="flex-1 overflow-y-auto p-8 bg-background-light dark:bg-background-dark">
+<!-- Summary Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<div class="p-2 bg-primary/20 rounded-lg">
+<span class="material-symbols-outlined text-navy-custom">account_balance_wallet</span>
+</div>
+<span class="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded">+8.5%</span>
+</div>
+<p class="text-slate-500 text-sm font-medium">Total Revenue</p>
+<h3 class="text-3xl font-extrabold mt-1">$128,430.00</h3>
+</div>
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<div class="p-2 bg-primary/20 rounded-lg">
+<span class="material-symbols-outlined text-navy-custom">group</span>
+</div>
+<span class="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded">+12.1%</span>
+</div>
+<p class="text-slate-500 text-sm font-medium">Active Users</p>
+<h3 class="text-3xl font-extrabold mt-1">12,540</h3>
+</div>
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<div class="p-2 bg-primary/20 rounded-lg">
+<span class="material-symbols-outlined text-navy-custom">trending_up</span>
+</div>
+<span class="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded">+2.4%</span>
+</div>
+<p class="text-slate-500 text-sm font-medium">Growth %</p>
+<h3 class="text-3xl font-extrabold mt-1">14.2%</h3>
+</div>
+</div>
+<!-- Charts Row 1 -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+<!-- Platform Revenue Line Chart -->
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex items-center justify-between mb-6">
+<div>
+<h4 class="text-lg font-bold">Platform Revenue</h4>
+<p class="text-xs text-slate-500">Monthly revenue trends over the last 6 months</p>
+</div>
+<button class="text-slate-400 hover:text-navy-custom transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+<div class="h-64 flex flex-col">
+<div class="flex-1 relative flex items-end">
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 100 100">
+<path d="M0,80 Q10,75 20,60 T40,40 T60,50 T80,20 T100,10" fill="none" stroke="#add8e6" stroke-width="3"></path>
+<path d="M0,80 Q10,75 20,60 T40,40 T60,50 T80,20 T100,10 L100,100 L0,100 Z" fill="url(#lineGradient)"></path>
+<defs>
+<lineargradient id="lineGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#add8e6" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="#add8e6" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+</svg>
+</div>
+<div class="flex justify-between mt-4 px-2 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+<span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+</div>
+</div>
+</div>
+<!-- Total Projects Bar Chart -->
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex items-center justify-between mb-6">
+<div>
+<h4 class="text-lg font-bold">Total Projects</h4>
+<p class="text-xs text-slate-500">Completed vs. Active task distribution</p>
+</div>
+<select class="text-xs bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1">
+<option>Last 6 Months</option>
+<option>Last Year</option>
+</select>
+</div>
+<div class="h-64 flex items-end justify-between px-4 gap-4">
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative" style="height: 60%">
+<div class="absolute bottom-0 w-full bg-primary rounded-t-lg" style="height: 75%"></div>
+</div>
+<span class="text-[10px] text-slate-500 font-bold uppercase">Jan</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative" style="height: 40%">
+<div class="absolute bottom-0 w-full bg-primary rounded-t-lg" style="height: 85%"></div>
+</div>
+<span class="text-[10px] text-slate-500 font-bold uppercase">Feb</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative" style="height: 90%">
+<div class="absolute bottom-0 w-full bg-primary rounded-t-lg" style="height: 60%"></div>
+</div>
+<span class="text-[10px] text-slate-500 font-bold uppercase">Mar</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative" style="height: 70%">
+<div class="absolute bottom-0 w-full bg-primary rounded-t-lg" style="height: 95%"></div>
+</div>
+<span class="text-[10px] text-slate-500 font-bold uppercase">Apr</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative" style="height: 30%">
+<div class="absolute bottom-0 w-full bg-primary rounded-t-lg" style="height: 50%"></div>
+</div>
+<span class="text-[10px] text-slate-500 font-bold uppercase">May</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative" style="height: 55%">
+<div class="absolute bottom-0 w-full bg-primary rounded-t-lg" style="height: 80%"></div>
+</div>
+<span class="text-[10px] text-slate-500 font-bold uppercase">Jun</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Comparison Chart -->
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h4 class="text-lg font-bold">Earnings vs. Spending</h4>
+<p class="text-xs text-slate-500">Freelancer earnings compared to Client project expenditure</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-primary"></span>
+<span class="text-xs font-semibold">Freelancer Earnings</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-navy-custom"></span>
+<span class="text-xs font-semibold">Client Spending</span>
+</div>
+</div>
+</div>
+<div class="space-y-8">
+<div class="relative">
+<div class="flex justify-between text-xs font-bold mb-2">
+<span>Development &amp; IT</span>
+<span>84% Capacity</span>
+</div>
+<div class="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+<div class="h-full bg-primary" style="width: 55%"></div>
+<div class="h-full bg-navy-custom" style="width: 29%"></div>
+</div>
+</div>
+<div class="relative">
+<div class="flex justify-between text-xs font-bold mb-2">
+<span>Design &amp; Creative</span>
+<span>62% Capacity</span>
+</div>
+<div class="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+<div class="h-full bg-primary" style="width: 40%"></div>
+<div class="h-full bg-navy-custom" style="width: 22%"></div>
+</div>
+</div>
+<div class="relative">
+<div class="flex justify-between text-xs font-bold mb-2">
+<span>Writing &amp; Translation</span>
+<span>91% Capacity</span>
+</div>
+<div class="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+<div class="h-full bg-primary" style="width: 60%"></div>
+<div class="h-full bg-navy-custom" style="width: 31%"></div>
+</div>
+</div>
+<div class="relative">
+<div class="flex justify-between text-xs font-bold mb-2">
+<span>Admin &amp; Support</span>
+<span>45% Capacity</span>
+</div>
+<div class="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+<div class="h-full bg-primary" style="width: 20%"></div>
+<div class="h-full bg-navy-custom" style="width: 25%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer text -->
+<div class="mt-8 text-center text-slate-400 text-xs py-4 border-t border-slate-200 dark:border-slate-800">
+                © 2025 TechTaskSoln Inc. All data refreshes every 15 minutes.
+            </div>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Project Details | TechTaskSoln</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: { "primary": "#add8e6", "navy": "#1e3a8a", "background-light": "#f6f7f8", "background-dark": "#141c1e" },
+                fontFamily: { "display": ["Manrope", "sans-serif"] },
+                borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+        },
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
+<style>
+    body { font-family: 'Manrope', sans-serif; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+</style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+
+<!-- Header -->
+<header class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark px-6 md:px-20 py-4 sticky top-0 z-50">
+    <div class="flex items-center gap-4">
+        <a href="/" class="flex items-center gap-2">
+            <div class="size-8 bg-primary rounded-lg flex items-center justify-center text-navy">
+                <span class="material-symbols-outlined font-bold">rocket_launch</span>
+            </div>
+            <h2 class="text-navy dark:text-primary text-xl font-extrabold leading-tight tracking-tight">TechTaskSoln</h2>
+        </a>
+    </div>
+    <div class="flex items-center gap-4">
+        <a href="/notifications/" class="flex size-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 hover:bg-primary/30 transition-colors">
+            <span class="material-symbols-outlined">notifications</span>
+        </a>
+        <a href="/chat/" class="flex size-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 hover:bg-primary/30 transition-colors">
+            <span class="material-symbols-outlined">chat</span>
+        </a>
+        <button onclick="logout()" class="text-sm font-semibold text-slate-600 hover:text-red-500 transition-colors">Logout</button>
+    </div>
+</header>
+
+<main class="flex flex-1 justify-center py-8 px-4 md:px-10 lg:px-40">
+    <div class="layout-content-container flex flex-col max-w-[960px] flex-1 gap-8">
+
+        <!-- Back link -->
+        <a href="javascript:history.back()" class="flex items-center gap-2 text-sm font-semibold text-navy dark:text-primary hover:underline w-fit">
+            <span class="material-symbols-outlined text-lg">arrow_back</span> Back to Projects
+        </a>
+
+        <!-- Project Info Card -->
+        <div id="project-loading" class="text-center py-20">
+            <span class="material-symbols-outlined text-5xl text-slate-300 animate-pulse">hourglass_top</span>
+            <p class="text-slate-400 mt-4">Loading project details...</p>
+        </div>
+
+        <div id="project-content" class="hidden space-y-8">
+            <!-- Title & Status -->
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h1 id="project-title" class="text-3xl font-black text-navy dark:text-primary tracking-tight"></h1>
+                    <p id="project-client" class="text-slate-500 mt-1"></p>
+                </div>
+                <span id="project-status" class="px-4 py-1.5 rounded-full text-xs font-bold uppercase"></span>
+            </div>
+
+            <!-- Details grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <p class="text-sm text-slate-500 font-medium">Budget</p>
+                    <h3 id="project-budget" class="text-2xl font-bold mt-1"></h3>
+                </div>
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <p class="text-sm text-slate-500 font-medium">Deadline</p>
+                    <h3 id="project-deadline" class="text-2xl font-bold mt-1"></h3>
+                </div>
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <p class="text-sm text-slate-500 font-medium">Required Skills</p>
+                    <div id="project-skills" class="flex flex-wrap gap-2 mt-2"></div>
+                </div>
+            </div>
+
+            <!-- Escrow Payment Panel (full width, below grid) -->
+            <div id="escrow-panel"></div>
+
+            <!-- Description -->
+            <div class="bg-white dark:bg-slate-900 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <h3 class="font-bold text-lg mb-4 text-navy dark:text-primary">Project Description</h3>
+                <p id="project-description" class="text-slate-600 dark:text-slate-400 leading-relaxed whitespace-pre-wrap"></p>
+            </div>
+
+            <!-- Actions -->
+            <div id="project-actions" class="flex gap-4"></div>
+
+            <!-- Proposals Section (for clients) -->
+            <div id="proposals-section" class="hidden">
+                <h3 class="font-bold text-lg mb-4 text-navy dark:text-primary">Proposals</h3>
+                <div id="proposals-list" class="space-y-4"></div>
+                <p id="proposals-empty" class="hidden text-slate-400 text-center py-8">No proposals yet.</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark px-10 py-6 text-center mt-auto">
+    <p class="text-slate-500 text-xs font-medium">&copy; 2025 TechTaskSoln. All rights reserved.</p>
+</footer>
+
+</div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/blockchain.js"></script>
+<script>
+(async function() {
+    if (!requireAuth()) return;
+
+    // Extract project ID from URL
+    const pathParts = window.location.pathname.split('/');
+    const projectId = pathParts[pathParts.indexOf('projects') + 1];
+
+    if (!projectId) { window.location.href = '/'; return; }
+
+    const userInfo = await fetchUserInfo();
+    const res = await apiCall(`/projects/${projectId}/`);
+
+    if (!res || !res.ok) {
+        document.getElementById('project-loading').innerHTML = '<p class="text-red-500 font-bold">Project not found.</p>';
+        return;
+    }
+
+    const project = await res.json();
+    document.getElementById('project-loading').classList.add('hidden');
+    document.getElementById('project-content').classList.remove('hidden');
+
+    document.getElementById('project-title').textContent = project.title;
+    document.getElementById('project-client').textContent = `Posted by User #${project.client}`;
+    document.getElementById('project-budget').textContent = `$${parseFloat(project.budget).toLocaleString()}`;
+    document.getElementById('project-deadline').textContent = new Date(project.deadline).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+    document.getElementById('project-description').textContent = project.description;
+
+    // Status badge
+    const statusEl = document.getElementById('project-status');
+    const statusColors = { 'OPEN': 'bg-green-100 text-green-700', 'IN_PROGRESS': 'bg-blue-100 text-blue-700', 'COMPLETED': 'bg-slate-100 text-slate-600' };
+    statusEl.className += ' ' + (statusColors[project.status] || 'bg-slate-100 text-slate-600');
+    statusEl.textContent = project.status.replace('_', ' ');
+
+    // Skills
+    const skillsEl = document.getElementById('project-skills');
+    (project.required_skills || '').split(',').map(s => s.trim()).filter(Boolean).forEach(skill => {
+        const span = document.createElement('span');
+        span.className = 'rounded bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600';
+        span.textContent = skill;
+        skillsEl.appendChild(span);
+    });
+
+    // Escrow panel — render after project data is loaded
+    const userRole = userInfo && userInfo.is_client ? 'client' : 'freelancer';
+    const freelancerWallet = project.freelancer_wallet || '';
+    const budgetEth = parseFloat(project.budget) || 0;
+    renderEscrowPanel(project.id, userRole, freelancerWallet, budgetEth);
+
+    // Actions
+    const actionsEl = document.getElementById('project-actions');
+    if (userInfo && userInfo.is_freelancer && project.status === 'OPEN') {
+        actionsEl.innerHTML = `<a href="/freelancer/proposals/?project=${project.id}" class="bg-navy text-white px-8 py-4 rounded-lg font-bold hover:opacity-90 transition-all shadow-md">Submit Proposal</a>`;
+    }
+    if (userInfo && userInfo.is_client && project.client === userInfo.id) {
+        actionsEl.innerHTML += `<a href="/chat/?project=${project.id}" class="bg-primary text-navy px-8 py-4 rounded-lg font-bold hover:opacity-90 transition-all">Open Chat</a>`;
+    }
+
+    // Load proposals (for clients on their own projects)
+    if (userInfo && userInfo.is_client && project.client === userInfo.id) {
+        document.getElementById('proposals-section').classList.remove('hidden');
+        const propRes = await apiCall(`/proposals/project/${project.id}/`);
+        if (propRes && propRes.ok) {
+            const propData = await propRes.json();
+            const projectProposals = propData.results || propData;
+            const listEl = document.getElementById('proposals-list');
+            if (projectProposals.length === 0) {
+                document.getElementById('proposals-empty').classList.remove('hidden');
+            } else {
+                projectProposals.forEach(p => {
+                    const div = document.createElement('div');
+                    div.className = 'bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm';
+                    const fp = p.freelancer_profile;
+                    const fullName = fp ? ([fp.first_name, fp.last_name].filter(Boolean).join(' ') || p.freelancer_username) : (p.freelancer_username || 'Freelancer #' + p.freelancer);
+                    const initials = fullName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'F';
+                    const statusBadge = p.status === 'ACCEPTED' ? '<span class="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">Accepted</span>' :
+                                        p.status === 'REJECTED' ? '<span class="px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold">Rejected</span>' :
+                                        '<span class="px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">Pending</span>';
+                    div.innerHTML = `
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="size-10 rounded-full bg-primary/20 flex items-center justify-center font-bold text-navy dark:text-primary text-sm">${initials}</div>
+                                <div>
+                                    <span class="font-bold">${fullName}</span>
+                                    ${fp?.title ? `<p class="text-xs text-slate-400">${fp.title}</p>` : ''}
+                                </div>
+                            </div>
+                            ${statusBadge}
+                        </div>
+                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">${p.cover_letter}</p>
+                        ${fp?.skills ? `
+                            <div class="flex flex-wrap gap-1.5 mb-3">
+                                ${fp.skills.split(',').slice(0, 5).map(s => `<span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs font-semibold">${s.trim()}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="flex gap-4 text-sm mb-4">
+                            <span class="font-bold">Bid: $${parseFloat(p.bid_amount).toLocaleString()}</span>
+                            <span class="text-slate-400">Delivery: ${p.delivery_time} days</span>
+                            ${fp?.rating ? `<span class="text-slate-400">⭐ ${Number(fp.rating).toFixed(1)}</span>` : ''}
+                        </div>
+                        ${p.status === 'PENDING' ? `
+                            <div class="flex gap-2">
+                                <button onclick="acceptProposal(${p.id})" class="flex-1 bg-navy text-white px-6 py-2.5 rounded-lg font-bold text-sm hover:opacity-90 flex items-center justify-center gap-1">
+                                    <span class="material-symbols-outlined text-base">check_circle</span> Accept & Fund Escrow
+                                </button>
+                                <button onclick="rejectProposal(${p.id})" class="flex-1 border border-red-300 text-red-500 px-6 py-2.5 rounded-lg font-bold text-sm hover:bg-red-50 flex items-center justify-center gap-1">
+                                    <span class="material-symbols-outlined text-base">cancel</span> Reject
+                                </button>
+                            </div>
+                        ` : ''}
+                        ${p.status === 'ACCEPTED' ? `
+                            <a href="/client/escrow/fund/${p.id}/" class="flex items-center justify-center gap-2 w-full py-2.5 bg-gradient-to-r from-emerald-500 to-sky-500 text-white rounded-lg text-sm font-bold hover:brightness-110 transition-all shadow-md">
+                                <span class="material-symbols-outlined text-base">account_balance_wallet</span> Fund Escrow
+                            </a>
+                        ` : ''}
+                    `;
+                    listEl.appendChild(div);
+                });
+            }
+        }
+    }
+})();
+
+async function acceptProposal(proposalId) {
+    if (!confirm('Accept this proposal? All other proposals for this project will be rejected.')) return;
+    const res = await apiCall(`/proposals/${proposalId}/accept/`, 'POST');
+    if (res && res.ok) {
+        const data = await res.json();
+        showAlert('Proposal accepted! Redirecting to fund escrow...', 'success');
+        const redirect = data.redirect || `/client/escrow/fund/${proposalId}/`;
+        setTimeout(() => window.location.href = redirect, 1000);
+    } else {
+        const err = res ? await res.json() : {};
+        showAlert(err.error || 'Failed to accept proposal.');
+    }
+}
+
+async function rejectProposal(proposalId) {
+    if (!confirm('Reject this proposal?')) return;
+    const res = await apiCall(`/proposals/${proposalId}/reject/`, 'POST');
+    if (res && res.ok) {
+        showAlert('Proposal rejected.', 'info');
+        setTimeout(() => location.reload(), 1000);
+    } else {
+        const err = res ? await res.json() : {};
+        showAlert(err.error || 'Failed to reject proposal.');
+    }
+}
+</script>
+</body></html>

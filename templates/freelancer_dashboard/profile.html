@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Freelancer Profile | TechTaskSoln</title>
+  <meta name="description" content="View freelancer profile on TechTaskSoln — the premium tech freelancing platform."/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap" rel="stylesheet"/>
+  <style>
+    /* ═══════════════════════════════════════════
+       DESIGN SYSTEM
+       ═══════════════════════════════════════════ */
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #111827;
+      --bg-card: #151c2e;
+      --bg-card-hover: #1a2340;
+      --bg-elevated: #1e2642;
+      --border: rgba(255,255,255,0.06);
+      --border-accent: rgba(129,140,248,0.25);
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-indigo: #818cf8;
+      --accent-violet: #a78bfa;
+      --accent-emerald: #34d399;
+      --accent-amber: #fbbf24;
+      --accent-rose: #fb7185;
+      --accent-sky: #38bdf8;
+      --gradient-hero: linear-gradient(135deg, #818cf8 0%, #a78bfa 50%, #c084fc 100%);
+      --gradient-card: linear-gradient(145deg, rgba(129,140,248,0.08), rgba(167,139,250,0.04));
+      --shadow-glow: 0 0 40px rgba(129,140,248,0.08);
+      --radius-xl: 20px;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    /* ─── Utilities ─── */
+    .hidden { display: none !important; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+
+    /* ─── Header ─── */
+    .header {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 24px;
+      background: rgba(10,14,26,0.85);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-logo { display: flex; align-items: center; gap: 10px; }
+    .header-logo .logo-icon {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: var(--gradient-hero);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .header-logo h2 { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; }
+    .header-nav { display: flex; align-items: center; gap: 12px; }
+    .header-nav a, .header-nav button {
+      font-size: 13px; color: var(--text-secondary); background: none; border: none;
+      cursor: pointer; display: flex; align-items: center; gap: 4px;
+      padding: 6px 12px; border-radius: var(--radius-sm);
+      transition: all 0.2s;
+    }
+    .header-nav a:hover, .header-nav button:hover { color: var(--text-primary); background: var(--bg-card); }
+
+    /* ─── Loading / Error ─── */
+    .state-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 120px 24px; }
+    .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent-indigo); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── Hero / Cover ─── */
+    .profile-hero {
+      position: relative;
+      height: 220px;
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 30%, #4c1d95 60%, #581c87 100%);
+      overflow: hidden;
+    }
+    .profile-hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    .profile-hero::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 80px;
+      background: linear-gradient(to top, var(--bg-primary), transparent);
+    }
+
+    /* ─── Profile Header Card ─── */
+    .profile-header-wrap {
+      max-width: 1000px; margin: -80px auto 0; padding: 0 24px; position: relative; z-index: 10;
+    }
+    .profile-header {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 32px; position: relative;
+      box-shadow: var(--shadow-glow);
+    }
+    .profile-header-top {
+      display: flex; gap: 24px; align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    /* Avatar */
+    .avatar-container {
+      width: 110px; height: 110px; border-radius: var(--radius-lg);
+      border: 3px solid var(--accent-indigo);
+      overflow: hidden; flex-shrink: 0;
+      background: var(--bg-elevated);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 30px rgba(129,140,248,0.15);
+    }
+    .avatar-container img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar-initials {
+      font-size: 36px; font-weight: 800;
+      background: var(--gradient-hero); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
+    }
+
+    /* Info */
+    .profile-info { flex: 1; min-width: 0; }
+    .profile-name {
+      font-size: 28px; font-weight: 800; letter-spacing: -0.5px;
+      line-height: 1.2; margin-bottom: 4px;
+    }
+    .profile-title {
+      font-size: 15px; color: var(--accent-indigo); font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .profile-meta {
+      display: flex; flex-wrap: wrap; gap: 16px;
+      font-size: 13px; color: var(--text-secondary);
+    }
+    .profile-meta .meta-item {
+      display: flex; align-items: center; gap: 4px;
+    }
+    .profile-meta .material-symbols-outlined { font-size: 16px; color: var(--text-muted); }
+
+    /* Availability badge */
+    .availability-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;
+      letter-spacing: 0.3px; text-transform: uppercase;
+    }
+    .availability-badge.available { background: rgba(52,211,153,0.12); color: var(--accent-emerald); }
+    .availability-badge.busy { background: rgba(251,191,36,0.12); color: var(--accent-amber); }
+    .availability-badge.not_available { background: rgba(251,113,133,0.12); color: var(--accent-rose); }
+    .availability-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .available .availability-dot { background: var(--accent-emerald); box-shadow: 0 0 8px var(--accent-emerald); }
+    .busy .availability-dot { background: var(--accent-amber); }
+    .not_available .availability-dot { background: var(--accent-rose); }
+
+    /* Actions */
+    .profile-actions {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 20px; border-radius: var(--radius-md);
+      font-size: 13px; font-weight: 700; border: none; cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .btn .material-symbols-outlined { font-size: 18px; }
+    .btn-primary {
+      background: var(--gradient-hero); color: #fff;
+      box-shadow: 0 4px 15px rgba(129,140,248,0.3);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(129,140,248,0.4); }
+    .btn-outline {
+      background: transparent; color: var(--text-primary);
+      border: 1px solid var(--border); backdrop-filter: blur(10px);
+    }
+    .btn-outline:hover { background: var(--bg-elevated); border-color: var(--accent-indigo); }
+    .btn-success {
+      background: linear-gradient(135deg, #059669, #10b981); color: #fff;
+      box-shadow: 0 4px 15px rgba(16,185,129,0.25);
+    }
+    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16,185,129,0.35); }
+    .btn-edit {
+      background: var(--bg-elevated); color: var(--accent-indigo);
+      border: 1px solid var(--border-accent);
+    }
+    .btn-edit:hover { background: rgba(129,140,248,0.12); }
+
+    /* ─── Stats Grid ─── */
+    .stats-grid {
+      max-width: 1000px; margin: 24px auto 0; padding: 0 24px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px;
+    }
+    .stat-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 20px 16px; text-align: center;
+      transition: all 0.3s ease; position: relative; overflow: hidden;
+    }
+    .stat-card:hover { border-color: var(--border-accent); transform: translateY(-3px); box-shadow: var(--shadow-glow); }
+    .stat-card::before {
+      content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 60px; height: 2px; border-radius: 0 0 4px 4px;
+    }
+    .stat-card:nth-child(1)::before { background: var(--accent-indigo); }
+    .stat-card:nth-child(2)::before { background: var(--accent-emerald); }
+    .stat-card:nth-child(3)::before { background: var(--accent-violet); }
+    .stat-card:nth-child(4)::before { background: var(--accent-amber); }
+    .stat-card:nth-child(5)::before { background: var(--accent-sky); }
+    .stat-value { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+    .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
+
+    /* ─── Content Grid ─── */
+    .content-grid {
+      max-width: 1000px; margin: 24px auto 0; padding: 0 24px 60px;
+      display: grid; grid-template-columns: 2fr 1fr; gap: 20px;
+    }
+    @media (max-width: 768px) {
+      .content-grid { grid-template-columns: 1fr; }
+      .profile-header-top { flex-direction: column; align-items: center; text-align: center; }
+      .profile-meta { justify-content: center; }
+      .profile-actions { justify-content: center; }
+      .profile-hero { height: 160px; }
+    }
+
+    .card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 24px;
+      transition: all 0.3s ease;
+    }
+    .card:hover { border-color: var(--border-accent); }
+    .card-title {
+      font-size: 12px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--text-muted); margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-title .material-symbols-outlined { font-size: 18px; color: var(--accent-indigo); }
+
+    /* Skills */
+    .skill-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      background: rgba(129,140,248,0.1); color: var(--accent-indigo);
+      border: 1px solid rgba(129,140,248,0.15);
+      margin: 3px; transition: all 0.2s;
+    }
+    .skill-chip:hover { background: rgba(129,140,248,0.2); transform: translateY(-1px); }
+
+    /* Bio */
+    .bio-text {
+      font-size: 14px; line-height: 1.8; color: var(--text-secondary);
+      white-space: pre-line;
+    }
+
+    /* Detail rows */
+    .detail-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-row .material-symbols-outlined { font-size: 20px; color: var(--accent-indigo); flex-shrink: 0; }
+    .detail-label { color: var(--text-muted); min-width: 80px; font-weight: 600; }
+    .detail-value { color: var(--text-primary); font-weight: 500; word-break: break-all; }
+    .detail-value a { color: var(--accent-indigo); }
+    .detail-value a:hover { text-decoration: underline; }
+
+    /* Rating stars */
+    .rating-stars { display: flex; align-items: center; gap: 2px; }
+    .rating-stars .material-symbols-outlined { font-size: 18px; }
+    .star-filled { color: var(--accent-amber); font-variation-settings: 'FILL' 1; }
+    .star-empty { color: var(--text-muted); }
+
+    /* Wallet address */
+    .wallet-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: var(--radius-sm);
+      background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.15);
+      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px;
+      color: var(--accent-emerald);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+      padding: 14px 24px; border-radius: var(--radius-md);
+      background: var(--bg-elevated); border: 1px solid var(--accent-emerald);
+      color: var(--accent-emerald); font-size: 13px; font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      transform: translateY(100px); opacity: 0;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    /* Animations */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-in { animation: fadeUp 0.5s ease forwards; }
+    .delay-1 { animation-delay: 0.1s; opacity: 0; }
+    .delay-2 { animation-delay: 0.2s; opacity: 0; }
+    .delay-3 { animation-delay: 0.3s; opacity: 0; }
+    .delay-4 { animation-delay: 0.4s; opacity: 0; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════ HEADER ═══════ -->
+<header class="header">
+  <a href="/" class="header-logo">
+    <div class="logo-icon">
+      <span class="material-symbols-outlined" style="color:#fff;font-size:18px;">terminal</span>
+    </div>
+    <h2>TechTaskSoln</h2>
+  </a>
+  <nav class="header-nav">
+    <a href="/client/freelancers/" id="backLink">
+      <span class="material-symbols-outlined" style="font-size:18px;">arrow_back</span> Browse Freelancers
+    </a>
+    <button onclick="logout()" id="logoutBtn" class="hidden">
+      <span class="material-symbols-outlined" style="font-size:18px;">logout</span>
+    </button>
+  </nav>
+</header>
+
+<!-- ═══════ LOADING STATE ═══════ -->
+<div id="loadingState" class="state-screen">
+  <div class="spinner"></div>
+  <p style="margin-top:16px;color:var(--text-muted);font-size:13px;">Loading profile…</p>
+</div>
+
+<!-- ═══════ ERROR STATE ═══════ -->
+<div id="errorState" class="state-screen hidden">
+  <span class="material-symbols-outlined" style="font-size:56px;color:var(--text-muted);margin-bottom:12px;">person_off</span>
+  <p style="color:var(--text-secondary);font-size:15px;font-weight:600;">Profile not found</p>
+  <p style="color:var(--text-muted);font-size:13px;margin-top:8px;">This freelancer may no longer be available.</p>
+  <a href="/client/freelancers/" class="btn btn-outline" style="margin-top:20px;">
+    <span class="material-symbols-outlined">arrow_back</span> Browse Freelancers
+  </a>
+</div>
+
+<!-- ═══════ PROFILE CONTENT ═══════ -->
+<div id="profileContent" class="hidden">
+
+  <!-- Hero Cover -->
+  <div class="profile-hero"></div>
+
+  <!-- Profile Header -->
+  <div class="profile-header-wrap animate-in">
+    <div class="profile-header">
+      <div class="profile-header-top">
+        <!-- Avatar -->
+        <div class="avatar-container" id="avatarWrap">
+          <span class="avatar-initials" id="avatarInitials"></span>
+        </div>
+
+        <!-- Info -->
+        <div class="profile-info">
+          <h1 class="profile-name" id="fullName"></h1>
+          <p class="profile-title" id="profileTitle"></p>
+
+          <div class="profile-meta">
+            <span class="meta-item" id="locationMeta" style="display:none;">
+              <span class="material-symbols-outlined">location_on</span>
+              <span id="locationText"></span>
+            </span>
+            <span class="meta-item">
+              <span class="material-symbols-outlined">schedule</span>
+              Member since <strong id="memberSince" style="margin-left:4px;"></strong>
+            </span>
+            <span class="meta-item" id="ratingMeta">
+              <span class="material-symbols-outlined" style="color:var(--accent-amber);">star</span>
+              <strong id="ratingValue"></strong>
+              <span style="color:var(--text-muted);">/5</span>
+            </span>
+            <span id="availabilityBadge" class="availability-badge">
+              <span class="availability-dot"></span>
+              <span id="availabilityText"></span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="profile-actions">
+          <button onclick="initiateChat()" class="btn btn-primary" id="chatBtn">
+            <span class="material-symbols-outlined">chat</span> Message
+          </button>
+          <button onclick="hireFreelancer()" class="btn btn-success" id="hireBtn">
+            <span class="material-symbols-outlined">handshake</span> Hire
+          </button>
+          <button onclick="copyWallet()" id="copyWalletBtn" class="btn btn-outline">
+            <span class="material-symbols-outlined">content_copy</span> Copy Wallet
+          </button>
+          <a href="/freelancer/profile/edit/" id="editProfileBtn" class="btn btn-edit hidden">
+            <span class="material-symbols-outlined">edit</span> Edit Profile
+          </a>
+        </div>
+      </div>
+
+      <!-- Bio -->
+      <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);" id="bioSection">
+        <p class="bio-text" id="bioText">No bio provided.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid animate-in delay-1">
+    <div class="stat-card">
+      <div class="stat-value" id="statProjects" style="color:var(--accent-indigo);">0</div>
+      <div class="stat-label">Projects Completed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statRate" style="color:var(--accent-emerald);">—</div>
+      <div class="stat-label">Hourly Rate</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statLevel" style="color:var(--accent-violet);">—</div>
+      <div class="stat-label">Experience</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--accent-amber);font-size:16px;" id="statCategory">—</div>
+      <div class="stat-label">Specialization</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statEarnings" style="color:var(--accent-sky);">0</div>
+      <div class="stat-label">Total Earned (ETH)</div>
+    </div>
+  </div>
+
+  <!-- Content Grid -->
+  <div class="content-grid">
+    <!-- Left Column -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <!-- Skills Card -->
+      <div class="card animate-in delay-2">
+        <div class="card-title">
+          <span class="material-symbols-outlined">code</span> Skills & Expertise
+        </div>
+        <div id="skillsContainer"></div>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <!-- Details Card -->
+      <div class="card animate-in delay-3">
+        <div class="card-title">
+          <span class="material-symbols-outlined">info</span> Details
+        </div>
+
+        <div id="categoryRow" class="detail-row">
+          <span class="material-symbols-outlined">work</span>
+          <span class="detail-label">Category</span>
+          <span class="detail-value" id="categoryText"></span>
+        </div>
+
+        <div id="languagesRow" class="detail-row hidden">
+          <span class="material-symbols-outlined">translate</span>
+          <span class="detail-label">Languages</span>
+          <span class="detail-value" id="languagesText"></span>
+        </div>
+
+        <div id="portfolioRow" class="detail-row hidden">
+          <span class="material-symbols-outlined">link</span>
+          <span class="detail-label">Portfolio</span>
+          <span class="detail-value"><a id="portfolioLink" href="#" target="_blank">View Portfolio</a></span>
+        </div>
+
+        <div id="emailRow" class="detail-row hidden">
+          <span class="material-symbols-outlined">mail</span>
+          <span class="detail-label">Email</span>
+          <span class="detail-value"><a id="emailText" href="#"></a></span>
+        </div>
+
+        <div id="walletRow" class="detail-row hidden">
+          <span class="material-symbols-outlined">account_balance_wallet</span>
+          <span class="detail-label">Wallet</span>
+          <span class="detail-value">
+            <span class="wallet-badge" id="walletText"></span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Rating Card -->
+      <div class="card animate-in delay-4">
+        <div class="card-title">
+          <span class="material-symbols-outlined">star</span> Rating
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:42px;font-weight:900;color:var(--accent-amber);" id="ratingBig">0.0</span>
+          <div>
+            <div class="rating-stars" id="ratingStars"></div>
+            <p style="font-size:11px;color:var(--text-muted);margin-top:4px;" id="ratingLabel">Based on reviews</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden wallet input for copy -->
+<input type="hidden" id="ethWallet" value=""/>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="/static/js/api.js"></script>
+<script>
+/* ── Config ── */
+const pathParts = window.location.pathname.split('/').filter(Boolean);
+const profileId = pathParts[pathParts.length - 1];
+let profileData = null;
+
+/* ── Load Profile ── */
+async function loadProfile() {
+  try {
+    const token = localStorage.getItem('access_token');
+    const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+    const res = await fetch(`/api/auth/freelancers/${profileId}/profile/`, { headers });
+
+    if (!res.ok) throw new Error('Not found');
+    profileData = await res.json();
+    renderProfile(profileData);
+  } catch (e) {
+    document.getElementById('loadingState').classList.add('hidden');
+    document.getElementById('errorState').classList.remove('hidden');
+  }
+}
+
+/* ── Render Profile ── */
+function renderProfile(p) {
+  const fullName = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username;
+  const initials = fullName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
+
+  // Name & Title
+  document.getElementById('fullName').textContent = fullName;
+  document.getElementById('profileTitle').textContent = p.title || formatCategory(p.category) || 'Freelancer';
+  document.getElementById('memberSince').textContent = p.member_since || '';
+
+  // Avatar
+  if (p.profile_picture) {
+    const wrap = document.getElementById('avatarWrap');
+    wrap.innerHTML = `<img src="${p.profile_picture}" alt="${fullName}"/>`;
+  } else {
+    document.getElementById('avatarInitials').textContent = initials;
+  }
+
+  // Rating
+  const rating = parseFloat(p.rating || 0);
+  document.getElementById('ratingValue').textContent = rating.toFixed(1);
+  document.getElementById('ratingBig').textContent = rating.toFixed(1);
+  renderStars(rating);
+
+  // Availability
+  const avMap = { available: 'Available', busy: 'Busy', not_available: 'Not Available' };
+  const badge = document.getElementById('availabilityBadge');
+  badge.className = `availability-badge ${p.availability || 'available'}`;
+  document.getElementById('availabilityText').textContent = avMap[p.availability] || 'Available';
+
+  // Location
+  if (p.location) {
+    document.getElementById('locationMeta').style.display = 'flex';
+    document.getElementById('locationText').textContent = p.location;
+  }
+
+  // Bio
+  document.getElementById('bioText').textContent = p.bio || 'This freelancer hasn\'t added a bio yet. Contact them to learn more about their experience and expertise.';
+
+  // Stats
+  document.getElementById('statProjects').textContent = p.completed_projects ?? 0;
+  document.getElementById('statRate').textContent = p.hourly_rate ? '$' + parseFloat(p.hourly_rate).toFixed(0) : '—';
+  document.getElementById('statLevel').textContent = p.experience_level || '—';
+  document.getElementById('statCategory').textContent = formatCategory(p.category);
+  document.getElementById('statEarnings').textContent = p.total_earnings ? parseFloat(p.total_earnings).toFixed(4) : '0.0000';
+  document.getElementById('categoryText').textContent = formatCategory(p.category);
+
+  // Skills
+  const skillsEl = document.getElementById('skillsContainer');
+  if (p.skills) {
+    const skills = p.skills.split(',').map(s => s.trim()).filter(Boolean);
+    skillsEl.innerHTML = skills.map(s =>
+      `<span class="skill-chip"><span class="material-symbols-outlined" style="font-size:14px;">check_circle</span> ${s}</span>`
+    ).join('');
+  } else {
+    skillsEl.innerHTML = '<p style="font-size:13px;color:var(--text-muted);">No skills listed yet.</p>';
+  }
+
+  // Portfolio
+  if (p.portfolio_link) {
+    document.getElementById('portfolioRow').classList.remove('hidden');
+    const link = document.getElementById('portfolioLink');
+    link.href = p.portfolio_link;
+    link.textContent = new URL(p.portfolio_link).hostname || 'View Portfolio';
+  }
+
+  // Languages
+  if (p.languages) {
+    document.getElementById('languagesRow').classList.remove('hidden');
+    document.getElementById('languagesText').textContent = p.languages;
+  }
+
+  // Wallet
+  if (p.eth_wallet_address) {
+    document.getElementById('walletRow').classList.remove('hidden');
+    const short = p.eth_wallet_address.slice(0, 6) + '…' + p.eth_wallet_address.slice(-4);
+    document.getElementById('walletText').textContent = short;
+    document.getElementById('ethWallet').value = p.eth_wallet_address;
+  } else {
+    document.getElementById('copyWalletBtn').style.display = 'none';
+  }
+
+  // Email
+  if (p.email) {
+    document.getElementById('emailRow').classList.remove('hidden');
+    document.getElementById('emailText').textContent = p.email;
+    document.getElementById('emailText').href = 'mailto:' + p.email;
+  }
+
+  // Show content
+  document.getElementById('loadingState').classList.add('hidden');
+  document.getElementById('profileContent').classList.remove('hidden');
+
+  // Check if own profile & show auth elements
+  checkIfOwnProfile();
+  if (isLoggedIn()) {
+    document.getElementById('logoutBtn').classList.remove('hidden');
+  }
+}
+
+/* ── Helpers ── */
+function formatCategory(cat) {
+  if (!cat) return '—';
+  return cat.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
+function renderStars(rating) {
+  const container = document.getElementById('ratingStars');
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    if (i <= Math.floor(rating)) {
+      html += '<span class="material-symbols-outlined star-filled">star</span>';
+    } else if (i - 0.5 <= rating) {
+      html += '<span class="material-symbols-outlined star-filled">star_half</span>';
+    } else {
+      html += '<span class="material-symbols-outlined star-empty">star</span>';
+    }
+  }
+  container.innerHTML = html;
+}
+
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+/* ── Actions ── */
+function copyWallet() {
+  const wallet = document.getElementById('ethWallet').value;
+  if (!wallet) { showToast('No wallet address available.'); return; }
+  navigator.clipboard.writeText(wallet).then(() => {
+    showToast('Wallet address copied!');
+    const btn = document.getElementById('copyWalletBtn');
+    btn.innerHTML = '<span class="material-symbols-outlined">check</span> Copied!';
+    setTimeout(() => {
+      btn.innerHTML = '<span class="material-symbols-outlined">content_copy</span> Copy Wallet';
+    }, 2000);
+  });
+}
+
+function initiateChat() {
+  if (!isLoggedIn()) { window.location.href = '/login/'; return; }
+  localStorage.setItem('chat_with_profile_id', profileId);
+  localStorage.setItem('chat_with_name', document.getElementById('fullName').textContent);
+  window.location.href = '/chat/';
+}
+
+function hireFreelancer() {
+  if (!isLoggedIn()) { window.location.href = '/login/'; return; }
+  localStorage.setItem('hire_freelancer_id', profileId);
+  localStorage.setItem('hire_freelancer_name', document.getElementById('fullName').textContent);
+  window.location.href = '/client/projects/new/';
+}
+
+async function checkIfOwnProfile() {
+  try {
+    const info = await fetchUserInfo();
+    if (info && info.is_freelancer) {
+      const myRes = await apiCall('/auth/profile/update/');
+      if (myRes && myRes.ok) {
+        const myProfile = await myRes.json();
+        if (String(myProfile.id) === String(profileId)) {
+          document.getElementById('editProfileBtn').classList.remove('hidden');
+          // Hide hire/chat buttons on own profile
+          document.getElementById('hireBtn').style.display = 'none';
+          document.getElementById('chatBtn').style.display = 'none';
+          // Update back link
+          document.getElementById('backLink').href = '/freelancer/dashboard/';
+          document.getElementById('backLink').innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">arrow_back</span> Dashboard';
+        }
+      }
+    }
+  } catch(e) { /* not logged in or not freelancer */ }
+}
+
+/* ── Init ── */
+loadProfile();
+</script>
+</body>
+</html>

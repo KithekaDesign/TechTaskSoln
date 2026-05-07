@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TechTaskSoln - Messaging</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "primary": "#add8e6",
+                    "navy": "#1e3a8a",
+                    "background-light": "#f6f7f8",
+                    "background-dark": "#141c1e",
+                },
+                fontFamily: { "display": ["Manrope", "sans-serif"] },
+            },
+        },
+    }
+</script>
+<style>
+    body { font-family: 'Manrope', sans-serif; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    .conv-item { transition: all 0.15s; cursor: pointer; }
+    .conv-item:hover { background: rgba(173,216,230,0.08); }
+    .conv-item.active { background: rgba(173,216,230,0.15); border-color: rgba(173,216,230,0.3); }
+    @keyframes msgIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+    .msg-bubble { animation: msgIn 0.2s ease forwards; }
+    @keyframes pulse-dot { 0%, 80%, 100% { opacity: 0.3; } 40% { opacity: 1; } }
+    .typing-dot { animation: pulse-dot 1.4s infinite ease-in-out; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+</style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
+<div class="relative flex h-screen w-full flex-col overflow-hidden">
+
+<!-- Header -->
+<header class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6">
+  <div class="flex items-center gap-4">
+    <a href="/" class="flex items-center gap-2 text-navy dark:text-primary no-underline">
+      <span class="material-symbols-outlined text-3xl font-bold">bolt</span>
+      <h2 class="text-xl font-extrabold tracking-tight">TechTaskSoln</h2>
+    </a>
+    <nav class="hidden md:flex items-center gap-6 ml-10">
+      <a class="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-navy transition-colors" href="#" id="dash-link">Dashboard</a>
+      <a class="text-sm font-semibold text-navy dark:text-primary border-b-2 border-navy dark:border-primary pb-1" href="/chat/">Messages</a>
+      <a class="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-navy transition-colors" href="/notifications/">Notifications</a>
+    </nav>
+  </div>
+  <div class="flex items-center gap-3">
+    <a href="/notifications/" class="size-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 hover:bg-primary/20 transition-colors">
+      <span class="material-symbols-outlined text-xl">notifications</span>
+    </a>
+    <button onclick="logout()" class="size-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-red-100 hover:text-red-500 transition-colors">
+      <span class="material-symbols-outlined text-xl">logout</span>
+    </button>
+  </div>
+</header>
+
+<div class="flex flex-1 overflow-hidden">
+
+<!-- Sidebar: Conversations -->
+<aside class="w-80 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col">
+  <div class="p-4 border-b border-slate-100 dark:border-slate-800">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-bold text-slate-800 dark:text-slate-200">Messages</h3>
+      <span id="convCount" class="text-xs text-slate-400 font-semibold">0 conversations</span>
+    </div>
+    <div class="relative">
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+      <input id="convSearch" type="text" placeholder="Search conversations..."
+        class="w-full h-9 rounded-lg border-none bg-slate-100 dark:bg-slate-800 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/50"/>
+    </div>
+  </div>
+  <div id="convList" class="flex-1 overflow-y-auto scrollbar-hide px-2 py-3 space-y-1">
+    <div class="text-center py-12">
+      <div class="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+      <p class="text-xs text-slate-400">Loading conversations...</p>
+    </div>
+  </div>
+</aside>
+
+<!-- Main Chat Area -->
+<main class="flex-1 flex flex-col bg-white dark:bg-slate-900 relative">
+
+  <!-- No conversation selected state -->
+  <div id="emptyChat" class="flex-1 flex flex-col items-center justify-center text-center p-8">
+    <div class="size-20 rounded-3xl bg-primary/10 flex items-center justify-center mb-6">
+      <span class="material-symbols-outlined text-4xl text-navy dark:text-primary">forum</span>
+    </div>
+    <h2 class="text-xl font-extrabold text-slate-800 dark:text-white mb-2">Your Messages</h2>
+    <p class="text-sm text-slate-500 max-w-md">Select a project conversation from the sidebar to start messaging. Messages are linked to your active projects.</p>
+  </div>
+
+  <!-- Active chat view (hidden initially) -->
+  <div id="activeChat" class="hidden flex-1 flex flex-col">
+    <!-- Chat Header -->
+    <div class="h-16 shrink-0 border-b border-slate-100 dark:border-slate-800 px-6 flex items-center justify-between bg-white/80 dark:bg-slate-900/80 backdrop-blur-md z-10">
+      <div class="flex items-center gap-4">
+        <div id="chatIcon" class="h-10 w-10 rounded-lg bg-navy flex items-center justify-center text-white">
+          <span class="material-symbols-outlined">folder</span>
+        </div>
+        <div>
+          <h1 id="chatTitle" class="text-base font-extrabold text-slate-900 dark:text-slate-100">Project Chat</h1>
+          <div class="flex items-center gap-2">
+            <span id="chatMeta" class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">Project</span>
+            <span id="chatStatus" class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-primary/20 text-navy">Active</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="wsIndicator" class="size-2 rounded-full bg-slate-300" title="Connection status"></span>
+        <span class="text-[10px] text-slate-400 font-semibold" id="wsLabel">Connecting...</span>
+      </div>
+    </div>
+
+    <!-- Messages Area -->
+    <div id="messagesArea" class="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-hide bg-background-light dark:bg-background-dark/30">
+      <!-- Messages rendered dynamically -->
+    </div>
+
+    <!-- Chat Input -->
+    <div class="p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
+      <div class="max-w-4xl mx-auto flex items-end gap-3">
+        <div class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-2xl p-2 flex flex-col gap-1 border-2 border-transparent focus-within:border-primary/50 transition-all">
+          <textarea id="chatInput" class="w-full bg-transparent border-none focus:ring-0 resize-none py-2 px-3 text-sm min-h-[40px] max-h-32 scrollbar-hide" placeholder="Write a message..." rows="1"></textarea>
+          <div class="flex items-center justify-between px-2 pb-1">
+            <div class="flex items-center gap-1 text-slate-400">
+              <button class="h-7 w-7 flex items-center justify-center rounded-md hover:bg-white dark:hover:bg-slate-700 hover:text-navy transition-all">
+                <span class="material-symbols-outlined text-lg">attach_file</span>
+              </button>
+              <button class="h-7 w-7 flex items-center justify-center rounded-md hover:bg-white dark:hover:bg-slate-700 hover:text-navy transition-all">
+                <span class="material-symbols-outlined text-lg">mood</span>
+              </button>
+            </div>
+            <span class="text-[10px] text-slate-400 font-medium">Press ↵ to send</span>
+          </div>
+        </div>
+        <button id="sendBtn" onclick="sendMessage()" class="h-12 w-12 flex items-center justify-center rounded-2xl bg-navy text-white shadow-lg shadow-navy/20 hover:scale-105 transition-transform active:scale-95">
+          <span class="material-symbols-outlined">send</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script>
+let userInfo = null;
+let conversations = [];  // { projectId, projectTitle, lastMessage, lastTime, messages[] }
+let activeProjectId = null;
+let ws = null;
+let pollTimer = null;
+let lastMessageCount = 0;
+
+// ── INIT ──────────────────────────────────────────
+(async function init() {
+    if (!requireAuth()) return;
+    userInfo = await fetchUserInfo();
+    if (userInfo) {
+        document.getElementById('dash-link').href = userInfo.is_client ? '/client/dashboard/' : '/freelancer/dashboard/';
+    }
+
+    await loadConversations();
+
+    // Check if we should auto-open a specific project chat
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectParam = urlParams.get('project');
+    if (projectParam) {
+        selectConversation(parseInt(projectParam));
+    }
+
+    // Search filter
+    document.getElementById('convSearch').addEventListener('input', renderConversationList);
+
+    // Enter to send
+    document.getElementById('chatInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+})();
+
+// ── LOAD CONVERSATIONS ────────────────────────────
+async function loadConversations() {
+    try {
+        // Get all messages accessible to this user
+        const res = await apiCall('/messages/');
+        if (!res || !res.ok) throw new Error('Failed to load messages');
+        const data = await res.json();
+        const allMessages = data.results || data;
+
+        // Group by project
+        const grouped = {};
+        allMessages.forEach(msg => {
+            const pid = msg.project;
+            if (!grouped[pid]) {
+                grouped[pid] = {
+                    projectId: pid,
+                    projectTitle: msg.project_title || `Project #${pid}`,
+                    messages: [],
+                    lastMessage: '',
+                    lastTime: '',
+                };
+            }
+            grouped[pid].messages.push(msg);
+        });
+
+        // Sort messages within each group and extract last message
+        Object.values(grouped).forEach(conv => {
+            conv.messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            const last = conv.messages[conv.messages.length - 1];
+            if (last) {
+                conv.lastMessage = `${last.sender_username}: ${last.content.slice(0, 50)}${last.content.length > 50 ? '...' : ''}`;
+                conv.lastTime = timeAgo(last.timestamp);
+            }
+        });
+
+        // Also load projects user is involved in (to show empty conversations)
+        const projRes = await apiCall('/projects/');
+        if (projRes && projRes.ok) {
+            const projects = await projRes.json();
+            const projList = projects.results || projects;
+            projList.forEach(p => {
+                // Only show projects the user is involved in
+                if (!grouped[p.id]) {
+                    grouped[p.id] = {
+                        projectId: p.id,
+                        projectTitle: p.title,
+                        messages: [],
+                        lastMessage: 'No messages yet',
+                        lastTime: '',
+                    };
+                }
+            });
+        }
+
+        conversations = Object.values(grouped).sort((a, b) => {
+            const aLast = a.messages.length ? new Date(a.messages[a.messages.length-1].timestamp) : new Date(0);
+            const bLast = b.messages.length ? new Date(b.messages[b.messages.length-1].timestamp) : new Date(0);
+            return bLast - aLast;
+        });
+
+        renderConversationList();
+    } catch (err) {
+        document.getElementById('convList').innerHTML = `
+            <div class="text-center py-8">
+                <span class="material-symbols-outlined text-3xl text-slate-300">error</span>
+                <p class="text-xs text-slate-400 mt-2">Failed to load conversations</p>
+            </div>`;
+    }
+}
+
+// ── RENDER CONVERSATION LIST ──────────────────────
+function renderConversationList() {
+    const container = document.getElementById('convList');
+    const search = (document.getElementById('convSearch').value || '').toLowerCase();
+
+    const filtered = conversations.filter(c =>
+        !search || c.projectTitle.toLowerCase().includes(search) || c.lastMessage.toLowerCase().includes(search)
+    );
+
+    document.getElementById('convCount').textContent = `${filtered.length} conversation${filtered.length !== 1 ? 's' : ''}`;
+
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-12">
+                <span class="material-symbols-outlined text-4xl text-slate-200">chat_bubble</span>
+                <p class="text-sm text-slate-400 mt-3 font-semibold">No conversations yet</p>
+                <p class="text-xs text-slate-400 mt-1">Messages will appear here when you start working on projects.</p>
+            </div>`;
+        return;
+    }
+
+    const icons = ['folder', 'code', 'security', 'cloud_sync', 'api', 'devices', 'design_services', 'shield'];
+
+    container.innerHTML = filtered.map((c, i) => {
+        const isActive = c.projectId === activeProjectId;
+        const icon = icons[i % icons.length];
+        const hasMessages = c.messages.length > 0;
+
+        return `
+            <div class="conv-item flex items-start gap-3 p-3 rounded-xl border border-transparent ${isActive ? 'active' : ''}"
+                 onclick="selectConversation(${c.projectId})">
+                <div class="h-10 w-10 shrink-0 rounded-lg ${isActive ? 'bg-navy text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'} flex items-center justify-center shadow-sm">
+                    <span class="material-symbols-outlined">${icon}</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                        <p class="text-sm font-bold ${isActive ? 'text-navy dark:text-primary' : 'text-slate-700 dark:text-slate-300'} truncate">${c.projectTitle}</p>
+                        ${c.lastTime ? `<span class="text-[10px] ${isActive ? 'text-navy font-semibold' : 'text-slate-400'}">${c.lastTime}</span>` : ''}
+                    </div>
+                    <p class="text-xs ${hasMessages ? 'text-slate-500' : 'text-slate-400 italic'} truncate mt-0.5">${c.lastMessage}</p>
+                </div>
+                ${hasMessages && !isActive ? '<div class="size-2 rounded-full bg-primary mt-1.5 shrink-0"></div>' : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+// ── SELECT CONVERSATION ───────────────────────────
+function selectConversation(projectId) {
+    activeProjectId = projectId;
+    const conv = conversations.find(c => c.projectId === projectId);
+    if (!conv) return;
+
+    // Update URL
+    const url = new URL(window.location);
+    url.searchParams.set('project', projectId);
+    window.history.replaceState({}, '', url);
+
+    // Show active chat
+    document.getElementById('emptyChat').classList.add('hidden');
+    document.getElementById('activeChat').classList.remove('hidden');
+
+    // Update header
+    document.getElementById('chatTitle').textContent = conv.projectTitle;
+    document.getElementById('chatMeta').textContent = `Project #${projectId}`;
+
+    // Render existing messages
+    renderMessages(conv.messages);
+
+    // Highlight active conversation
+    renderConversationList();
+
+    // Connect WebSocket
+    connectWebSocket(projectId);
+
+    // Start polling as fallback
+    startPolling(projectId);
+}
+
+// ── RENDER MESSAGES ───────────────────────────────
+function renderMessages(messages) {
+    const area = document.getElementById('messagesArea');
+    lastMessageCount = messages.length;
+
+    if (messages.length === 0) {
+        area.innerHTML = `
+            <div class="text-center py-16">
+                <span class="material-symbols-outlined text-4xl text-slate-200">chat</span>
+                <p class="text-sm text-slate-400 mt-3 font-semibold">No messages yet</p>
+                <p class="text-xs text-slate-400 mt-1">Send the first message to start the conversation.</p>
+            </div>`;
+        return;
+    }
+
+    let html = '';
+    let lastDate = '';
+
+    messages.forEach(msg => {
+        const msgDate = new Date(msg.timestamp).toLocaleDateString();
+        if (msgDate !== lastDate) {
+            html += `<div class="flex justify-center"><span class="text-[11px] font-bold text-slate-400 bg-white dark:bg-slate-800 px-3 py-1 rounded-full shadow-sm uppercase tracking-widest">${formatDate(msg.timestamp)}</span></div>`;
+            lastDate = msgDate;
+        }
+
+        const isMine = msg.sender === userInfo?.id;
+        const senderName = msg.sender_username || 'User';
+        const initials = senderName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
+        const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        if (isMine) {
+            html += `
+                <div class="msg-bubble flex items-end gap-3 max-w-[75%] ml-auto flex-row-reverse">
+                    <div class="size-8 shrink-0 rounded-full bg-primary flex items-center justify-center text-navy font-bold text-xs">ME</div>
+                    <div class="flex flex-col gap-1 items-end">
+                        <div class="flex items-center gap-2 mr-1">
+                            <span class="text-[10px] text-slate-400">${time}</span>
+                            <span class="text-xs font-bold text-navy dark:text-primary">You</span>
+                        </div>
+                        <div class="bg-navy text-white p-4 rounded-2xl rounded-br-none shadow-md text-sm leading-relaxed">${escapeHtml(msg.content)}</div>
+                    </div>
+                </div>`;
+        } else {
+            html += `
+                <div class="msg-bubble flex items-end gap-3 max-w-[75%]">
+                    <div class="size-8 shrink-0 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-300">${initials}</div>
+                    <div class="flex flex-col gap-1">
+                        <div class="flex items-center gap-2 ml-1">
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">${senderName}</span>
+                            <span class="text-[10px] text-slate-400">${time}</span>
+                        </div>
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl rounded-bl-none shadow-sm text-sm text-slate-700 dark:text-slate-300 leading-relaxed border border-slate-100 dark:border-slate-800">${escapeHtml(msg.content)}</div>
+                    </div>
+                </div>`;
+        }
+    });
+
+    area.innerHTML = html;
+    area.scrollTop = area.scrollHeight;
+}
+
+// ── SEND MESSAGE ──────────────────────────────────
+async function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text || !activeProjectId) return;
+
+    input.value = '';
+
+    // Try WebSocket first
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+            message: text,
+            sender: userInfo.id,
+            project: activeProjectId,
+        }));
+    } else {
+        // Fallback to REST API
+        const res = await apiCall('/messages/', 'POST', {
+            project: activeProjectId,
+            content: text,
+        });
+        if (res && res.ok) {
+            const newMsg = await res.json();
+            appendLocalMessage(newMsg);
+        }
+    }
+
+    // Append immediately for local display (optimistic)
+    appendLocalMessage({
+        id: Date.now(),
+        sender: userInfo.id,
+        sender_username: userInfo.username,
+        project: activeProjectId,
+        content: text,
+        timestamp: new Date().toISOString(),
+    });
+}
+
+function appendLocalMessage(msg) {
+    const conv = conversations.find(c => c.projectId === activeProjectId);
+    if (!conv) return;
+
+    // Avoid duplicates
+    if (conv.messages.some(m => m.content === msg.content && m.sender === msg.sender &&
+        Math.abs(new Date(m.timestamp) - new Date(msg.timestamp)) < 2000)) return;
+
+    conv.messages.push(msg);
+    conv.lastMessage = `${msg.sender_username || 'You'}: ${msg.content.slice(0, 50)}`;
+    conv.lastTime = 'now';
+
+    renderMessages(conv.messages);
+    renderConversationList();
+}
+
+// ── WEBSOCKET CONNECTION ──────────────────────────
+function connectWebSocket(projectId) {
+    // Close previous connection
+    if (ws) {
+        ws.onclose = null; // prevent reconnect
+        ws.close();
+        ws = null;
+    }
+
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const roomName = `project_${projectId}`;
+    const wsUrl = `${wsProtocol}//${window.location.host}/ws/chat/${roomName}/`;
+
+    try {
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+            setConnectionStatus('connected');
+        };
+
+        ws.onmessage = (e) => {
+            const data = JSON.parse(e.data);
+            // Only append if it's from someone else (we already show our own optimistically)
+            if (data.sender_id !== userInfo.id) {
+                appendLocalMessage({
+                    id: Date.now(),
+                    sender: data.sender_id,
+                    sender_username: data.sender,
+                    project: activeProjectId,
+                    content: data.message,
+                    timestamp: new Date().toISOString(),
+                });
+            }
+        };
+
+        ws.onclose = () => {
+            setConnectionStatus('polling');
+        };
+
+        ws.onerror = () => {
+            setConnectionStatus('polling');
+        };
+    } catch (err) {
+        setConnectionStatus('polling');
+    }
+}
+
+function setConnectionStatus(status) {
+    const dot = document.getElementById('wsIndicator');
+    const label = document.getElementById('wsLabel');
+    if (status === 'connected') {
+        dot.className = 'size-2 rounded-full bg-green-500';
+        label.textContent = 'Live';
+    } else if (status === 'polling') {
+        dot.className = 'size-2 rounded-full bg-amber-400';
+        label.textContent = 'Polling';
+    } else {
+        dot.className = 'size-2 rounded-full bg-slate-300';
+        label.textContent = 'Offline';
+    }
+}
+
+// ── REST POLLING FALLBACK ─────────────────────────
+function startPolling(projectId) {
+    if (pollTimer) clearInterval(pollTimer);
+
+    pollTimer = setInterval(async () => {
+        if (activeProjectId !== projectId) return;
+
+        try {
+            const res = await apiCall(`/messages/?project=${projectId}`);
+            if (!res || !res.ok) return;
+            const data = await res.json();
+            const messages = data.results || data;
+
+            if (messages.length > lastMessageCount) {
+                const conv = conversations.find(c => c.projectId === projectId);
+                if (conv) {
+                    // Merge new messages
+                    const existingIds = new Set(conv.messages.map(m => m.id));
+                    const newMsgs = messages.filter(m => !existingIds.has(m.id));
+                    if (newMsgs.length > 0) {
+                        conv.messages = messages;
+                        conv.messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                        const last = conv.messages[conv.messages.length - 1];
+                        conv.lastMessage = `${last.sender_username}: ${last.content.slice(0, 50)}`;
+                        conv.lastTime = timeAgo(last.timestamp);
+                        renderMessages(conv.messages);
+                        renderConversationList();
+                    }
+                }
+            }
+        } catch (err) { /* ignore polling errors */ }
+    }, 3000);
+}
+
+// ── HELPERS ───────────────────────────────────────
+function timeAgo(dateStr) {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.floor((now - d) / 1000);
+    if (diff < 60) return 'now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatDate(dateStr) {
+    const d = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (d.toDateString() === today.toDateString()) return 'Today';
+    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+</body></html>

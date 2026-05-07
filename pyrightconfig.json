@@ -1,0 +1,16 @@
+{
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "basic",
+  "reportMissingModuleSource": "none",
+  "reportMissingTypeStubs": "none",
+  "reportAttributeAccessIssue": "none",
+  "reportGeneralTypeIssues": "none",
+  "reportOperatorIssue": "none",
+  "reportIndexIssue": "none",
+  "reportArgumentType": "none",
+  "reportCallIssue": "none",
+  "reportReturnType": "none",
+  "reportFunctionMemberAccess": "none",
+  "reportOptionalMemberAccess": "warning",
+  "reportPossiblyUnbound": "warning"
+}

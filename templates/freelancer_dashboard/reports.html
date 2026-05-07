@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reports &amp; Analytics | TechTaskSoln</title>
+  <meta name="description" content="View your freelancing performance — earnings, proposals, project stats, and download detailed reports."/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary":           "#add8e6",
+            "background-light":  "#f1f5f9",
+            "background-dark":   "#0f172a",
+            "indigo-sidebar":    "#1e1b4b",
+          },
+          fontFamily: { "display": ["Manrope", "sans-serif"] },
+        },
+      },
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Manrope', sans-serif; }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+    }
+
+    /* ── Page entrance animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up        { animation: fadeUp 0.45s ease forwards; }
+    .fade-up-d1     { animation: fadeUp 0.45s 0.08s ease both; }
+    .fade-up-d2     { animation: fadeUp 0.45s 0.16s ease both; }
+    .fade-up-d3     { animation: fadeUp 0.45s 0.24s ease both; }
+
+    /* ── Stat cards ── */
+    .stat-card {
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      cursor: default;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(99,102,241,0.12); }
+
+    /* ── Spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 0.9s linear infinite; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #6366f1; border-radius: 3px; }
+
+    /* ── Glow badge ── */
+    .badge-glow { box-shadow: 0 0 0 3px rgba(99,102,241,0.25); }
+
+    /* ── Export btn shimmer ── */
+    @keyframes shimmer {
+      0%   { background-position: -200% center; }
+      100% { background-position:  200% center; }
+    }
+    .btn-export {
+      background: linear-gradient(90deg, #4f46e5, #6366f1, #818cf8, #6366f1, #4f46e5);
+      background-size: 200% auto;
+      animation: shimmer 3s linear infinite;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .btn-export:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99,102,241,0.4);
+    }
+    .btn-export:active { transform: scale(0.97); }
+
+    /* ── Section header stripe ── */
+    .section-stripe {
+      border-left: 4px solid #6366f1;
+      padding-left: 12px;
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen">
+
+<!-- Sidebar + overlay injected by sidebar.js -->
+
+<!-- ══════════════════════ HEADER ══════════════════════ -->
+<header class="sticky top-0 z-30 flex items-center justify-between bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 lg:px-8 py-3 shadow-sm">
+  <div class="flex items-center gap-3">
+    <button id="hamburger-btn" onclick="toggleSidebar()" class="flex items-center justify-center size-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300" aria-label="Toggle sidebar">
+      <span class="material-symbols-outlined text-2xl">menu</span>
+    </button>
+    <div class="flex items-center gap-2">
+      <div class="size-8 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,#6366f1,#818cf8);">
+        <span class="material-symbols-outlined text-white text-lg">bar_chart</span>
+      </div>
+      <h1 class="text-base font-bold text-slate-800 dark:text-slate-100 hidden sm:block">Reports &amp; Analytics</h1>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <!-- Date range filter -->
+    <div class="hidden md:flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-1.5">
+      <span class="material-symbols-outlined text-slate-400 text-lg">date_range</span>
+      <select id="periodFilter" onchange="onPeriodChange()" class="bg-transparent text-sm font-semibold text-slate-700 dark:text-slate-300 border-none focus:ring-0 cursor-pointer">
+        <option value="all">All Time</option>
+        <option value="thismonth">This Month</option>
+        <option value="last3">Last 3 Months</option>
+        <option value="last6">Last 6 Months</option>
+        <option value="thisyear">This Year</option>
+      </select>
+    </div>
+
+    <!-- Export CSV btn -->
+    <button id="exportCsvBtn" onclick="exportCSV()" class="btn-export flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-bold shadow-md">
+      <span class="material-symbols-outlined text-lg">download</span>
+      <span class="hidden sm:inline">Export CSV</span>
+    </button>
+
+    <!-- Notification bell -->
+    <a href="/notifications/" class="relative flex items-center justify-center size-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500">
+      <span class="material-symbols-outlined">notifications</span>
+      <span id="notifDot" class="hidden absolute top-1.5 right-1.5 size-2 bg-red-500 rounded-full"></span>
+    </a>
+
+    <!-- User chip -->
+    <div class="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-700">
+      <div id="headerAvatar" class="size-8 rounded-full flex items-center justify-center text-white text-xs font-bold badge-glow" style="background:linear-gradient(135deg,#6366f1,#818cf8);">?</div>
+      <span id="headerUser" class="text-sm font-semibold text-slate-700 dark:text-slate-300 hidden md:block">—</span>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════════ MAIN ══════════════════════ -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+  <!-- ── Page Hero ── -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 fade-up">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-xs font-bold uppercase tracking-widest text-indigo-500">Freelancer Hub</span>
+        <span class="text-xs text-slate-400">›</span>
+        <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Reports</span>
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Performance Report</h2>
+      <p id="reportSubtitle" class="text-slate-500 dark:text-slate-400 text-sm mt-1">Your freelancing analytics at a glance</p>
+    </div>
+    <div class="flex gap-3 flex-wrap">
+      <button onclick="exportCSV()" id="exportCsvBtn2" class="btn-export flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold shadow-md">
+        <span class="material-symbols-outlined text-lg">download</span>
+        Download Report
+      </button>
+      <button onclick="loadAnalytics()" class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-indigo-400 transition-all">
+        <span class="material-symbols-outlined text-lg">refresh</span>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Loading State ── -->
+  <div id="loadingState" class="flex flex-col items-center justify-center py-32 gap-4">
+    <div class="w-12 h-12 border-4 border-t-transparent rounded-full spinner" style="border-color:#6366f1;border-top-color:transparent;"></div>
+    <p class="text-slate-400 text-sm font-medium">Loading your analytics...</p>
+  </div>
+
+  <!-- ── Error State ── -->
+  <div id="errorState" class="hidden text-center py-24">
+    <div class="inline-flex items-center justify-center size-16 rounded-2xl mb-4" style="background:rgba(239,68,68,0.1);">
+      <span class="material-symbols-outlined text-4xl text-red-400">error_outline</span>
+    </div>
+    <p class="text-slate-500 font-semibold" id="errorText">Failed to load analytics.</p>
+    <button onclick="loadAnalytics()" class="mt-4 px-5 py-2.5 rounded-xl text-sm font-bold text-white" style="background:linear-gradient(135deg,#6366f1,#818cf8);">Retry</button>
+  </div>
+
+  <!-- ══ DASHBOARD CONTENT ══ -->
+  <div id="dashContent" class="hidden space-y-8">
+
+    <!-- ── KPI Cards Row 1 ── -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 fade-up-d1">
+
+      <!-- Total Earned -->
+      <div class="stat-card rounded-2xl p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800" style="box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+        <div class="flex items-center justify-between mb-4">
+          <div class="size-10 rounded-xl flex items-center justify-center" style="background:rgba(34,197,94,0.12);">
+            <span class="material-symbols-outlined text-green-500 text-xl">payments</span>
+          </div>
+          <span id="totalEarnedBadge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">+0%</span>
+        </div>
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Total Earned</p>
+        <p class="text-2xl font-black text-slate-900 dark:text-white" id="totalEarned">—</p>
+        <p class="text-xs text-slate-400 mt-1">All-time released payments</p>
+      </div>
+
+      <!-- This Month -->
+      <div class="stat-card rounded-2xl p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+        <div class="flex items-center justify-between mb-4">
+          <div class="size-10 rounded-xl flex items-center justify-center" style="background:rgba(99,102,241,0.12);">
+            <span class="material-symbols-outlined text-indigo-500 text-xl">calendar_month</span>
+          </div>
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400">MTD</span>
+        </div>
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">This Month</p>
+        <p class="text-2xl font-black text-slate-900 dark:text-white" id="thisMonth">—</p>
+        <p class="text-xs text-slate-400 mt-1">Current month earnings</p>
+      </div>
+
+      <!-- Success Rate -->
+      <div class="stat-card rounded-2xl p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+        <div class="flex items-center justify-between mb-4">
+          <div class="size-10 rounded-xl flex items-center justify-center" style="background:rgba(168,85,247,0.12);">
+            <span class="material-symbols-outlined text-purple-500 text-xl">trending_up</span>
+          </div>
+          <span id="successRateBadge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400">0%</span>
+        </div>
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Proposal Success</p>
+        <p class="text-2xl font-black text-slate-900 dark:text-white" id="successRate">—</p>
+        <p class="text-xs text-slate-400 mt-1">Proposals accepted</p>
+      </div>
+
+      <!-- Completion Rate -->
+      <div class="stat-card rounded-2xl p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+        <div class="flex items-center justify-between mb-4">
+          <div class="size-10 rounded-xl flex items-center justify-center" style="background:rgba(245,158,11,0.12);">
+            <span class="material-symbols-outlined text-amber-500 text-xl">task_alt</span>
+          </div>
+          <span id="completionRateBadge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">0%</span>
+        </div>
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Completion Rate</p>
+        <p class="text-2xl font-black text-slate-900 dark:text-white" id="completionRate">—</p>
+        <p class="text-xs text-slate-400 mt-1">Projects completed</p>
+      </div>
+    </div>
+
+    <!-- ── KPI Cards Row 2 (mini) ── -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 fade-up-d2">
+      <div class="rounded-xl p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700">
+        <p class="text-xs text-slate-400 mb-1 font-medium">Total Proposals</p>
+        <p class="text-xl font-bold text-slate-800 dark:text-white" id="totalProposals">—</p>
+      </div>
+      <div class="rounded-xl p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700">
+        <p class="text-xs text-slate-400 mb-1 font-medium">Active Projects</p>
+        <p class="text-xl font-bold text-slate-800 dark:text-white" id="activeProjects">—</p>
+      </div>
+      <div class="rounded-xl p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700">
+        <p class="text-xs text-slate-400 mb-1 font-medium">Completed Projects</p>
+        <p class="text-xl font-bold text-slate-800 dark:text-white" id="completedProjects">—</p>
+      </div>
+      <div class="rounded-xl p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700">
+        <p class="text-xs text-slate-400 mb-1 font-medium">Avg. Project Value</p>
+        <p class="text-xl font-bold text-slate-800 dark:text-white" id="avgValue">—</p>
+      </div>
+    </div>
+
+    <!-- ── Charts Row ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 fade-up-d2">
+
+      <!-- Monthly Earnings Bar -->
+      <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h3 class="font-bold text-slate-800 dark:text-white section-stripe">Monthly Earnings</h3>
+            <p class="text-xs text-slate-400 mt-1 ml-4">Last 12 months of released payments</p>
+          </div>
+          <span id="chartTotalLabel" class="text-xs font-bold text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 px-3 py-1 rounded-full"></span>
+        </div>
+        <div class="relative h-56">
+          <canvas id="earningsChart"></canvas>
+          <div id="noEarnings" class="hidden absolute inset-0 flex flex-col items-center justify-center text-slate-300 dark:text-slate-600 gap-2">
+            <span class="material-symbols-outlined text-5xl">bar_chart</span>
+            <p class="text-sm font-medium">No earnings data yet</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Proposal Doughnut -->
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+        <h3 class="font-bold text-slate-800 dark:text-white section-stripe mb-5">Proposal Breakdown</h3>
+        <div class="relative h-44">
+          <canvas id="proposalChart"></canvas>
+          <div id="noProposals" class="hidden absolute inset-0 flex flex-col items-center justify-center text-slate-300 dark:text-slate-600 gap-2">
+            <span class="material-symbols-outlined text-5xl">pie_chart</span>
+            <p class="text-sm font-medium">No proposals yet</p>
+          </div>
+        </div>
+        <div id="proposalLegend" class="mt-4 flex flex-col gap-2"></div>
+      </div>
+    </div>
+
+    <!-- ── Performance + Project Status ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 fade-up-d3">
+
+      <!-- Project Status Doughnut -->
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+        <h3 class="font-bold text-slate-800 dark:text-white section-stripe mb-5">Project Status</h3>
+        <div class="relative h-44">
+          <canvas id="projectChart"></canvas>
+          <div id="noProjects" class="hidden absolute inset-0 flex flex-col items-center justify-center text-slate-300 dark:text-slate-600 gap-2">
+            <span class="material-symbols-outlined text-5xl">folder_open</span>
+            <p class="text-sm font-medium">No projects yet</p>
+          </div>
+        </div>
+        <div id="projectLegend" class="mt-4 flex flex-col gap-2"></div>
+      </div>
+
+      <!-- Performance Progress Bars -->
+      <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+        <h3 class="font-bold text-slate-800 dark:text-white section-stripe mb-5">Performance Summary</h3>
+        <div class="space-y-5">
+
+          <div>
+            <div class="flex justify-between text-sm mb-1.5">
+              <span class="text-slate-500 font-medium">Proposal Success Rate</span>
+              <span class="font-bold text-indigo-600 dark:text-indigo-400" id="successRateBar">0%</span>
+            </div>
+            <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2.5">
+              <div id="successRateBarFill" class="h-2.5 rounded-full transition-all duration-700" style="width:0%;background:linear-gradient(90deg,#6366f1,#818cf8);"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-sm mb-1.5">
+              <span class="text-slate-500 font-medium">Project Completion Rate</span>
+              <span class="font-bold text-emerald-600 dark:text-emerald-400" id="completionRateBar">0%</span>
+            </div>
+            <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2.5">
+              <div id="completionRateBarFill" class="h-2.5 rounded-full transition-all duration-700" style="width:0%;background:linear-gradient(90deg,#10b981,#34d399);"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-sm mb-1.5">
+              <span class="text-slate-500 font-medium">Last 30 Days vs. Total</span>
+              <span class="font-bold text-amber-600 dark:text-amber-400" id="last30Days">$0</span>
+            </div>
+            <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2.5">
+              <div id="last30DaysBarFill" class="h-2.5 rounded-full transition-all duration-700" style="width:0%;background:linear-gradient(90deg,#f59e0b,#fbbf24);"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Smart tips -->
+        <div id="tips" class="mt-6 space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- ── Export Section ── -->
+    <div class="rounded-2xl p-6 fade-up-d3" style="background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08));border:1px solid rgba(99,102,241,0.15);">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-start gap-4">
+          <div class="size-12 rounded-2xl flex items-center justify-center shrink-0" style="background:linear-gradient(135deg,#6366f1,#818cf8);">
+            <span class="material-symbols-outlined text-white text-2xl">download</span>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-800 dark:text-white text-lg">Export Your Report</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Download a full CSV with summary, monthly breakdown, and all payment transactions.</p>
+          </div>
+        </div>
+        <div class="flex gap-3 flex-wrap">
+          <button onclick="exportCSV()" id="exportCsvBtn3" class="btn-export flex items-center gap-2 px-6 py-3 rounded-xl text-white text-sm font-bold shadow-md">
+            <span class="material-symbols-outlined text-lg">table_chart</span>
+            Export CSV
+          </button>
+          <button onclick="printReport()" class="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-indigo-400 transition-all">
+            <span class="material-symbols-outlined text-lg">print</span>
+            Print
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /#dashContent -->
+</main>
+
+<!-- ══════════════════════ SCRIPTS ══════════════════════ -->
+<script src="/static/js/api.js"></script>
+<script src="/static/js/sidebar.js"></script>
+<script>
+/* ─── Auth guard ─────────────────────────────────────── */
+if (!isLoggedIn()) window.location.href = '/login/';
+
+/* ─── Chart instances ────────────────────────────────── */
+let earningsChart = null;
+let proposalChart = null;
+let projectChart  = null;
+
+/* ─── Formatters ─────────────────────────────────────── */
+function fmt(amount) {
+  return '$' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function pct(v) { return v + '%'; }
+
+/* ─── Period filter ──────────────────────────────────── */
+function onPeriodChange() {
+  loadAnalytics();
+}
+
+/* ─── Load analytics from API ────────────────────────── */
+async function loadAnalytics() {
+  const loading = document.getElementById('loadingState');
+  const error   = document.getElementById('errorState');
+  const dash    = document.getElementById('dashContent');
+
+  loading.classList.remove('hidden');
+  error.classList.add('hidden');
+  dash.classList.add('hidden');
+
+  try {
+    const token = localStorage.getItem('access_token');
+    const res = await fetch('/api/reports/freelancer/analytics/', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+
+    const data = await res.json();
+    renderDashboard(data);
+
+  } catch (e) {
+    console.error(e);
+    loading.classList.add('hidden');
+    error.classList.remove('hidden');
+    document.getElementById('errorText').textContent =
+      'Failed to load analytics. ' + (e.message || '');
+  }
+}
+
+/* ─── Render dashboard ───────────────────────────────── */
+function renderDashboard(data) {
+  const s = data.summary;
+
+  // ── KPI cards ───────────────────────────────────────
+  document.getElementById('totalEarned').textContent       = fmt(s.total_earned);
+  document.getElementById('thisMonth').textContent         = fmt(s.this_month_earned);
+  document.getElementById('successRate').textContent       = pct(s.success_rate);
+  document.getElementById('completionRate').textContent    = pct(s.completion_rate);
+  document.getElementById('totalProposals').textContent    = s.total_proposals;
+  document.getElementById('activeProjects').textContent    = s.active_projects;
+  document.getElementById('completedProjects').textContent = s.completed_projects;
+  document.getElementById('avgValue').textContent          = fmt(s.avg_project_value);
+
+  // badges
+  document.getElementById('successRateBadge').textContent    = pct(s.success_rate);
+  document.getElementById('completionRateBadge').textContent = pct(s.completion_rate);
+
+  // ── Progress bars ───────────────────────────────────
+  document.getElementById('successRateBar').textContent    = pct(s.success_rate);
+  document.getElementById('completionRateBar').textContent = pct(s.completion_rate);
+  document.getElementById('last30Days').textContent        = fmt(s.last_30_days_earned);
+
+  setTimeout(() => {
+    document.getElementById('successRateBarFill').style.width    = Math.min(s.success_rate, 100)    + '%';
+    document.getElementById('completionRateBarFill').style.width = Math.min(s.completion_rate, 100) + '%';
+    const last30Pct = s.total_earned > 0
+      ? Math.min((s.last_30_days_earned / s.total_earned) * 100, 100) : 0;
+    document.getElementById('last30DaysBarFill').style.width = last30Pct + '%';
+  }, 300);
+
+  // ── Chart label ────────────────────────────────────
+  const chartTotal = data.monthly_earnings.reduce((acc, d) => acc + d.total, 0);
+  document.getElementById('chartTotalLabel').textContent = '12-mo: ' + fmt(chartTotal);
+
+  // ── Monthly earnings bar chart ──────────────────────
+  if (data.monthly_earnings.length > 0) {
+    const ctx = document.getElementById('earningsChart').getContext('2d');
+    if (earningsChart) earningsChart.destroy();
+    earningsChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: data.monthly_earnings.map(d => d.month),
+        datasets: [{
+          label: 'Earnings ($)',
+          data: data.monthly_earnings.map(d => d.total),
+          backgroundColor: (ctx) => {
+            const grad = ctx.chart.ctx.createLinearGradient(0, 0, 0, 200);
+            grad.addColorStop(0, 'rgba(99,102,241,0.85)');
+            grad.addColorStop(1, 'rgba(139,92,246,0.3)');
+            return grad;
+          },
+          borderColor: '#6366f1',
+          borderWidth: 1,
+          borderRadius: 8,
+          hoverBackgroundColor: '#818cf8',
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: {
+          callbacks: { label: (ctx) => ' $' + Number(ctx.raw).toLocaleString('en-US', {minimumFractionDigits:2}) }
+        }},
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(99,102,241,0.06)' },
+            ticks: { color: '#94a3b8', callback: v => '$' + v }
+          },
+          x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+        }
+      }
+    });
+  } else {
+    document.getElementById('earningsChart').classList.add('hidden');
+    document.getElementById('noEarnings').classList.remove('hidden');
+  }
+
+  // ── Proposal doughnut ───────────────────────────────
+  const hasProposals = data.proposal_breakdown.some(d => d.value > 0);
+  if (hasProposals) {
+    const ctx2 = document.getElementById('proposalChart').getContext('2d');
+    if (proposalChart) proposalChart.destroy();
+    proposalChart = new Chart(ctx2, {
+      type: 'doughnut',
+      data: {
+        labels: data.proposal_breakdown.map(d => d.label),
+        datasets: [{
+          data: data.proposal_breakdown.map(d => d.value),
+          backgroundColor: data.proposal_breakdown.map(d => d.color),
+          borderWidth: 0, hoverOffset: 6,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        cutout: '68%'
+      }
+    });
+    buildLegend('proposalLegend', data.proposal_breakdown);
+  } else {
+    document.getElementById('proposalChart').classList.add('hidden');
+    document.getElementById('noProposals').classList.remove('hidden');
+  }
+
+  // ── Project doughnut ────────────────────────────────
+  const hasProjects = data.project_breakdown.some(d => d.value > 0);
+  if (hasProjects) {
+    const ctx3 = document.getElementById('projectChart').getContext('2d');
+    if (projectChart) projectChart.destroy();
+    projectChart = new Chart(ctx3, {
+      type: 'doughnut',
+      data: {
+        labels: data.project_breakdown.map(d => d.label),
+        datasets: [{
+          data: data.project_breakdown.map(d => d.value),
+          backgroundColor: data.project_breakdown.map(d => d.color),
+          borderWidth: 0, hoverOffset: 6,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        cutout: '68%'
+      }
+    });
+    buildLegend('projectLegend', data.project_breakdown);
+  } else {
+    document.getElementById('projectChart').classList.add('hidden');
+    document.getElementById('noProjects').classList.remove('hidden');
+  }
+
+  // ── Smart tips ──────────────────────────────────────
+  renderTips(s);
+
+  // ── Show dashboard ──────────────────────────────────
+  document.getElementById('loadingState').classList.add('hidden');
+  document.getElementById('dashContent').classList.remove('hidden');
+
+  // ── Subtitle ───────────────────────────────────────
+  const now = new Date();
+  document.getElementById('reportSubtitle').textContent = `Last updated: ${now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'})}`;
+}
+
+/* ─── Build chart legend ─────────────────────────────── */
+function buildLegend(elId, items) {
+  const el = document.getElementById(elId);
+  el.innerHTML = items.map(d => `
+    <div class="flex items-center justify-between text-xs">
+      <div class="flex items-center gap-2">
+        <div class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${d.color}"></div>
+        <span class="text-slate-500 dark:text-slate-400">${d.label}</span>
+      </div>
+      <span class="font-bold text-slate-700 dark:text-slate-300">${d.value}</span>
+    </div>`).join('');
+}
+
+/* ─── Smart tips ─────────────────────────────────────── */
+function renderTips(s) {
+  const tips = [];
+  if (s.success_rate < 30 && s.total_proposals > 3)
+    tips.push({ icon: 'lightbulb', color: '#f59e0b', text: 'Proposal success rate below 30%. Try more tailored cover letters.' });
+  if (s.completion_rate === 100 && s.completed_projects > 0)
+    tips.push({ icon: 'star', color: '#f59e0b', text: 'Perfect completion rate! Clients love reliable freelancers.' });
+  if (s.active_projects > 3)
+    tips.push({ icon: 'warning', color: '#ef4444', text: `You have ${s.active_projects} active projects — manage your time carefully.` });
+  if (s.total_proposals === 0)
+    tips.push({ icon: 'info', color: '#6366f1', text: 'Start submitting proposals to unlock earnings and project analytics.' });
+  if (s.this_month_earned > s.total_earned * 0.3)
+    tips.push({ icon: 'trending_up', color: '#10b981', text: 'Great momentum this month — over 30% of total earned!' });
+
+  const el = document.getElementById('tips');
+  el.innerHTML = tips.map(t => `
+    <div class="flex items-start gap-3 p-3 rounded-xl" style="background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.1);">
+      <span class="material-symbols-outlined text-lg mt-0.5" style="color:${t.color}">${t.icon}</span>
+      <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">${t.text}</p>
+    </div>`).join('');
+}
+
+/* ─── Export CSV ─────────────────────────────────────── */
+async function exportCSV() {
+  // Animate buttons
+  const btns = ['exportCsvBtn','exportCsvBtn2','exportCsvBtn3'];
+  btns.forEach(id => {
+    const b = document.getElementById(id);
+    if (b) { b.innerHTML = '<span class="material-symbols-outlined text-lg spinner">hourglass_empty</span><span class="hidden sm:inline ml-2">Preparing...</span>'; b.disabled = true; }
+  });
+
+  try {
+    const token = localStorage.getItem('access_token');
+    const res = await fetch('/api/reports/freelancer/export/', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+
+    // Trigger file download
+    const blob  = await res.blob();
+    const url   = URL.createObjectURL(blob);
+    const link  = document.createElement('a');
+    const now   = new Date();
+    const dateStr = now.toISOString().slice(0,10).replace(/-/g,'');
+
+    // Try to use Content-Disposition filename, fallback to generated
+    const disposition = res.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    link.download = match ? match[1] : `techtasksoln_report_${dateStr}.csv`;
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    btns.forEach(id => {
+      const b = document.getElementById(id);
+      if (b) {
+        b.innerHTML = '<span class="material-symbols-outlined text-lg">check_circle</span><span class="hidden sm:inline ml-2">Downloaded!</span>';
+        b.disabled = false;
+        setTimeout(() => {
+          b.innerHTML = '<span class="material-symbols-outlined text-lg">download</span><span class="hidden sm:inline ml-2">Export CSV</span>';
+        }, 2500);
+      }
+    });
+
+  } catch (e) {
+    console.error(e);
+    btns.forEach(id => {
+      const b = document.getElementById(id);
+      if (b) { b.innerHTML = '<span class="material-symbols-outlined text-lg">error</span><span class="hidden sm:inline ml-2">Failed</span>'; b.disabled = false; }
+    });
+    setTimeout(() => {
+      btns.forEach(id => {
+        const b = document.getElementById(id);
+        if (b) b.innerHTML = '<span class="material-symbols-outlined text-lg">download</span><span class="hidden sm:inline ml-2">Export CSV</span>';
+      });
+    }, 3000);
+  }
+}
+
+/* ─── Print ──────────────────────────────────────────── */
+function printReport() {
+  window.print();
+}
+
+/* ─── Init ───────────────────────────────────────────── */
+(async () => {
+  const info = await fetchUserInfo();
+  if (info) {
+    const initial = (info.username || 'U')[0].toUpperCase();
+    const headerAvatar = document.getElementById('headerAvatar');
+    if (headerAvatar) headerAvatar.textContent = initial;
+    const headerUser = document.getElementById('headerUser');
+    if (headerUser) headerUser.textContent = info.username;
+  }
+
+  // Notification badge
+  try {
+    const notifRes = await apiCall('/notifications/unread-count/');
+    if (notifRes && notifRes.ok) {
+      const nd = await notifRes.json();
+      if (nd.unread_count > 0) {
+        document.getElementById('notifDot').classList.remove('hidden');
+      }
+    }
+  } catch (_) {}
+
+  loadAnalytics();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TechTaskSoln - Project Monitoring</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#add8e6",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#141c1e",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+
+// Add this at the top of the <script> block in each admin template
+document.addEventListener('DOMContentLoaded', async () => {
+    const user = await getCurrentUser(); // your existing api.js helper
+    if (!user || !user.is_staff) {
+        window.location.href = '/login/';
+        return;
+    }
+    // ... rest of page init
+});
+
+    </script>
+<style>
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
+<!-- Sidebar + Overlay injected by sidebar.js -->
+
+<!-- Sidebar Navigation -->
+<!-- Main Content Area -->
+<main class="min-h-screen">
+<!-- Header -->
+<header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between px-8 shrink-0">
+<button id="hamburger-btn" onclick="toggleSidebar()" class="flex items-center justify-center size-10 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300 mr-4" aria-label="Toggle sidebar">
+    <span class="material-symbols-outlined text-2xl">menu</span>
+</button>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-slate-400">monitoring</span>
+<h2 class="text-lg font-bold tracking-tight">Project Monitoring</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
+<input class="pl-10 pr-4 py-1.5 w-64 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary/50" placeholder="Global search..." type="text"/>
+</div>
+<button class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 relative">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-2 right-2.5 block size-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900"></span>
+</button>
+<div class="size-8 rounded-full bg-primary/30 flex items-center justify-center text-slate-700 dark:text-slate-200 overflow-hidden">
+<img alt="Admin Avatar" class="w-full h-full object-cover" data-alt="Professional admin profile picture circular" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkwmlmBSsgAjovzh25e4y_Qfbd3AxgnPsN-kmihdADWdzWVoeUExGoU5aGBpPdaeuwJZPu8GVwNSQZckMSNQ0YUaAqBqnTjL6Fjq4dL9uOGD8JM8UopVHsGfulYH6WCvRm89L6cF5XKIQCDhTJZ-aAVtvW5d-SmRev5sOXr4JDw9xfTOUzitZ3UT1kPL2c4ucyBUdGdc7n93FUQEiwDx_z8oJjv3XrRaDM08BDrMUdX1g0Iz1vxxRAchuLsblwvQ4NcbekRUAR9N1J"/>
+</div>
+</div>
+</header>
+<!-- Page Body -->
+<div class="flex-1 overflow-y-auto p-8">
+<!-- Page Title & Stats -->
+<div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h1 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Active Projects</h1>
+<p class="text-slate-500 dark:text-slate-400 mt-1">Currently monitoring 48 active engagements across the ecosystem.</p>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-4 py-2 bg-primary text-slate-900 font-bold rounded-lg text-sm transition hover:brightness-95">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                            New Project
+                        </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold rounded-lg text-sm transition hover:bg-slate-50 dark:hover:bg-slate-700">
+<span class="material-symbols-outlined text-[18px]">ios_share</span>
+                            Export
+                        </button>
+</div>
+</div>
+<!-- Filters Bar -->
+<div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 mb-6 flex flex-wrap items-center gap-4">
+<div class="flex-1 min-w-[300px] relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-primary focus:border-primary" placeholder="Search by project, client, or freelancer..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium">
+                            Status: All <span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+<button class="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium">
+                            Risk: Any <span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+<button class="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium">
+                            Budget: All <span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+<button class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+</div>
+</div>
+<!-- Projects Table -->
+<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Project Name</th>
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Client</th>
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Freelancer</th>
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Budget</th>
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Current Milestone</th>
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Risk Status</th>
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+<!-- Row 1 -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex flex-col">
+<span class="text-sm font-bold text-slate-900 dark:text-white">CloudScale Infrastructure</span>
+<span class="text-xs text-slate-500">ID: PRJ-8821</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<div class="size-6 rounded bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold">NS</div>
+<span class="text-sm font-medium">NexGen Solutions</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<img alt="Freelancer" class="size-6 rounded-full" data-alt="Portrait of a male developer freelancer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7Gcew7K8YfgN07pDw1hgDD1GNFJGjogOUf0a9vVksqsvA7ryccsXdZ9x3LgXiXZAZUYNrV-_gZ-dJhf1wmGtfL-Wa6yHVa_7qcQg9lwLD4YD2GgDV7oAwee8dsx25u3TEek0IcoSMmhcZ9xjFxhJtXDuAxxBduDx_CwDauyrqq2vflB1U4uIZwMG-P-fXGwRtWbw_Hh2EE_oVh91CicuMfxLehQW8lS6petZeHVSBaU6PVmzaV9S5MISEE6zKuMqpUwNVpLVHQSEr"/>
+<span class="text-sm font-medium">Alex Rivera</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="text-sm font-bold">$12,500</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex flex-col gap-1.5 w-32">
+<div class="flex justify-between text-[10px] font-bold uppercase">
+<span>API Integration</span>
+<span>75%</span>
+</div>
+<div class="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 75%;"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                            Low Risk
+                                        </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex flex-col">
+<span class="text-sm font-bold text-slate-900 dark:text-white">FinTech Mobile App</span>
+<span class="text-xs text-slate-500">ID: PRJ-9042</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<div class="size-6 rounded bg-purple-100 text-purple-600 flex items-center justify-center text-[10px] font-bold">BA</div>
+<span class="text-sm font-medium">Bloom Assets</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<img alt="Freelancer" class="size-6 rounded-full" data-alt="Portrait of a female designer freelancer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCaUmWv6xD9tBOZHlCWYc0NuK2SFNskNv8x2R3OhP0gb24PuKyOeC9fG5Drx3_TAbzKTP9VvCY2J5nCg8vD1UMU990Lb1uWOTiCD1UjJSwZqA2dFH5XSLe6Sdi9OCfYezQsLajXkWN0QTBLpLXpnliZ_QsZcpHCvEiewfUe6qLUYKeKu912p-tTLnkgjUAX3aRmmhXvMox4KXNZoNt1gxsj9Z9BqcjK-NAzy0TCc4J_LqSt4tqCyhZUbmKQbaBDZ5IlJbaRvF4YrtXP"/>
+<span class="text-sm font-medium">Sarah Jenkins</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="text-sm font-bold">$24,000</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex flex-col gap-1.5 w-32">
+<div class="flex justify-between text-[10px] font-bold uppercase">
+<span>Security Audit</span>
+<span>40%</span>
+</div>
+<div class="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-yellow-400" style="width: 40%;"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                                            Medium Risk
+                                        </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex flex-col">
+<span class="text-sm font-bold text-slate-900 dark:text-white">EcoStore Rebrand</span>
+<span class="text-xs text-slate-500">ID: PRJ-7719</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<div class="size-6 rounded bg-emerald-100 text-emerald-600 flex items-center justify-center text-[10px] font-bold">EG</div>
+<span class="text-sm font-medium">EverGreen Group</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<img alt="Freelancer" class="size-6 rounded-full" data-alt="Portrait of a young male creative freelancer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-MfTS4-FE4W-eNPDm9OJ9avGoX6e4CajmKWOXTPTGqqNXokQrigLO0J4XPatGw4e4bK10EJd_xwwUqe9YLTfhqE7kSTVDvwzzMQ7SPDXkZvnT5dMjE68k7fevB9WDFdGThWn4caFdPdiG3WD99Yr1F5229xZiPI6AM1Sd00HjeNA2FpM1gbSCcloES0rIxFBEu4-K9QAPumDbRXYh0rJxU9LSGtePOew_82yWCq6jfJ_91IuHgfYDTtVGf-inGmGkFMPjrBAc72ru"/>
+<span class="text-sm font-medium">Michael Chen</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="text-sm font-bold">$8,200</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex flex-col gap-1.5 w-32">
+<div class="flex justify-between text-[10px] font-bold uppercase">
+<span>Final Assets</span>
+<span>95%</span>
+</div>
+<div class="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 95%;"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                            Low Risk
+                                        </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors bg-red-50/30 dark:bg-red-900/10">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex flex-col">
+<span class="text-sm font-bold text-slate-900 dark:text-white">AI Engine Backend</span>
+<span class="text-xs text-slate-500">ID: PRJ-1102</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<div class="size-6 rounded bg-slate-200 text-slate-600 flex items-center justify-center text-[10px] font-bold">QT</div>
+<span class="text-sm font-medium">Quantum Tech</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<img alt="Freelancer" class="size-6 rounded-full" data-alt="Portrait of a female backend engineer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1fvjhTOZXLeNF2DSUxYqYRZ5PI7OwDjxfo53dPXrKldfXfXWV9jG4iZTRiEs0toFoza_fib4XhV9WtLMQ30LH0qBK6NgQMWZI2lMxJV15kEAMk7xCfngSN972ovDJcYGXfzCzGCvmJeG6PGDAW9bHIvlyzGlQnl3-De-cjF_JZyL2M_PfWvA4f0TggccarkxvQ3io-XSWk5nL0slbuewXt6hDJdN_-v0_aPIoFqLUFu5Ni5_rAL48ZAOnzNOMHHCPVxK5RXh-3Lvn"/>
+<span class="text-sm font-medium">Elena Rossi</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="text-sm font-bold">$45,000</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex flex-col gap-1.5 w-32">
+<div class="flex justify-between text-[10px] font-bold uppercase">
+<span>Model Training</span>
+<span>15%</span>
+</div>
+<div class="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-red-500" style="width: 15%;"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                                            High Risk
+                                        </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+<span class="text-sm text-slate-500">Showing 1 to 4 of 48 projects</span>
+<div class="flex gap-2">
+<button class="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm disabled:opacity-50" disabled="">
+                                Previous
+                            </button>
+<button class="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-700">
+                                Next
+                            </button>
+</div>
+</div>
+</div>
+<!-- Summary Cards Footer -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-4">
+<div class="size-12 rounded-lg bg-red-100 dark:bg-red-900/20 text-red-600 flex items-center justify-center">
+<span class="material-symbols-outlined">warning</span>
+</div>
+<div>
+<p class="text-sm text-slate-500 dark:text-slate-400 font-medium">High Risk Projects</p>
+<h3 class="text-2xl font-bold">03</h3>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-4">
+<div class="size-12 rounded-lg bg-primary/20 text-slate-700 dark:text-primary flex items-center justify-center">
+<span class="material-symbols-outlined">trending_up</span>
+</div>
+<div>
+<p class="text-sm text-slate-500 dark:text-slate-400 font-medium">Total Pipeline Value</p>
+<h3 class="text-2xl font-bold">$1.2M</h3>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-4">
+<div class="size-12 rounded-lg bg-green-100 dark:bg-green-900/20 text-green-600 flex items-center justify-center">
+<span class="material-symbols-outlined">check_circle</span>
+</div>
+<div>
+<p class="text-sm text-slate-500 dark:text-slate-400 font-medium">Upcoming Deadlines</p>
+<h3 class="text-2xl font-bold">12</h3>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

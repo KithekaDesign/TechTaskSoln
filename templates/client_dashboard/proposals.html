@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Proposals | TechTaskSoln</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: { "primary": "#add8e6", "background-light": "#f6f7f8", "background-dark": "#141c1e" },
+          fontFamily: { "display": ["Manrope", "sans-serif"] },
+        },
+      },
+    }
+  </script>
+  <style>
+    body { font-family: 'Manrope', sans-serif; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .skill-tag { display:inline-block; background:#e0f2fe; color:#0369a1; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:600; margin:2px; }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen">
+
+<!-- NOTIFICATION POPUP (shown on login if unread) -->
+<div id="notifPopup" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md p-6">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+          <span class="material-symbols-outlined text-blue-600">notifications</span>
+        </div>
+        <div>
+          <h2 class="font-bold text-slate-900 dark:text-white">You have new notifications</h2>
+          <p class="text-xs text-slate-400" id="popupCount"></p>
+        </div>
+      </div>
+      <button onclick="closePopup()" class="text-slate-400 hover:text-slate-600">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div id="popupNotifList" class="space-y-3 max-h-64 overflow-y-auto mb-4"></div>
+    <div class="flex gap-2">
+      <button onclick="closePopup()" class="flex-1 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800">Dismiss</button>
+      <button onclick="goToNotifications()" class="flex-1 py-2 bg-primary text-slate-900 rounded-lg text-sm font-semibold hover:brightness-105">View All</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 lg:px-10 py-3 bg-white dark:bg-background-dark sticky top-0 z-40">
+  <a href="/" class="flex items-center gap-3 no-underline">
+    <div class="size-8 flex items-center justify-center bg-primary rounded-lg">
+      <span class="material-symbols-outlined text-slate-900 text-lg">terminal</span>
+    </div>
+    <h2 class="text-slate-900 dark:text-slate-100 text-lg font-bold">TechTaskSoln</h2>
+  </a>
+  <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-400">
+    <a href="/client/dashboard/" class="hover:text-primary">Dashboard</a>
+    <a href="/client/projects/" class="hover:text-primary">Projects</a>
+    <a href="#" class="text-primary font-semibold">Proposals</a>
+    <a href="/client/freelancers/" class="hover:text-primary">Freelancers</a>
+  </nav>
+  <div class="flex items-center gap-3">
+    <!-- Notification bell -->
+    <a href="/notifications/" class="relative p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+      <span class="material-symbols-outlined text-slate-600 dark:text-slate-400">notifications</span>
+      <span id="bellBadge" class="hidden absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold"></span>
+    </a>
+    <span id="username" class="text-sm text-slate-500 hidden md:block"></span>
+    <button onclick="logout()" class="text-slate-400 hover:text-red-500">
+      <span class="material-symbols-outlined">logout</span>
+    </button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="max-w-6xl mx-auto px-6 py-8">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold">Proposals Inbox</h1>
+      <p class="text-sm text-slate-400 mt-1">Review and act on freelancer proposals</p>
+    </div>
+    <!-- Filter by project -->
+    <select id="projectFilter" onchange="filterByProject()" class="text-sm border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+      <option value="">All Projects</option>
+    </select>
+  </div>
+
+  <!-- Loading -->
+  <div id="loadingState" class="flex flex-col items-center justify-center py-24">
+    <div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+    <p class="text-slate-400 text-sm">Loading proposals...</p>
+  </div>
+
+  <!-- Empty -->
+  <div id="emptyState" class="hidden text-center py-24">
+    <span class="material-symbols-outlined text-5xl text-slate-300 block mb-3">inbox</span>
+    <p class="text-slate-500 font-semibold">No proposals yet</p>
+    <p class="text-slate-400 text-sm mt-1">Post a project to start receiving proposals from freelancers.</p>
+    <a href="/client/projects/new/" class="inline-block mt-4 px-4 py-2 bg-primary text-slate-900 rounded-lg text-sm font-semibold hover:brightness-105">Post a Project</a>
+  </div>
+
+  <!-- Proposals list -->
+  <div id="proposalsList" class="hidden space-y-4"></div>
+
+</main>
+
+<!-- PROPOSAL CARD TEMPLATE -->
+<template id="proposalTemplate">
+  <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden proposal-card">
+
+    <!-- Status bar -->
+    <div class="status-bar h-1"></div>
+
+    <div class="p-6">
+      <div class="flex flex-col lg:flex-row gap-6">
+
+        <!-- FREELANCER PROFILE CARD (left) -->
+        <div class="lg:w-64 flex-shrink-0">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-lg font-bold text-slate-900 avatar-circle"></div>
+            <div>
+              <p class="font-bold text-slate-900 dark:text-white freelancer-name"></p>
+              <p class="text-xs text-slate-400 freelancer-title"></p>
+            </div>
+          </div>
+          <div class="space-y-1 text-xs text-slate-500 dark:text-slate-400 mb-3">
+            <div class="flex items-center gap-1">
+              <span class="material-symbols-outlined text-sm">star</span>
+              <span class="freelancer-rating"></span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="material-symbols-outlined text-sm">task_alt</span>
+              <span class="freelancer-projects"></span> projects completed
+            </div>
+            <div class="flex items-center gap-1 availability-row">
+              <span class="material-symbols-outlined text-sm">circle</span>
+              <span class="freelancer-availability"></span>
+            </div>
+          </div>
+          <div class="skills-container mb-3"></div>
+          <!-- Action buttons -->
+          <div class="flex flex-col gap-2">
+            <button class="btn-view-profile flex items-center justify-center gap-1 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold">
+              <span class="material-symbols-outlined text-sm">person</span> View Profile
+            </button>
+            <button class="btn-chat flex items-center justify-center gap-1 py-1.5 text-xs border border-primary rounded-lg hover:bg-primary/10 font-semibold text-primary">
+              <span class="material-symbols-outlined text-sm">chat</span> Message
+            </button>
+            <button class="btn-copy-wallet flex items-center justify-center gap-1 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold">
+              <span class="material-symbols-outlined text-sm">account_balance_wallet</span> Copy Wallet
+            </button>
+          </div>
+        </div>
+
+        <!-- PROPOSAL DETAILS (right) -->
+        <div class="flex-1">
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">Project</p>
+              <h3 class="font-bold text-slate-900 dark:text-white proposal-project-title"></h3>
+            </div>
+            <span class="proposal-status-badge px-3 py-1 rounded-full text-xs font-bold"></span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 mb-4 mt-4">
+            <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-3">
+              <p class="text-xs text-slate-400 mb-1">Bid Amount</p>
+              <p class="text-lg font-bold text-slate-900 dark:text-white proposal-bid"></p>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-3">
+              <p class="text-xs text-slate-400 mb-1">Delivery Time</p>
+              <p class="text-lg font-bold text-slate-900 dark:text-white proposal-delivery"></p>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-2">Cover Letter</p>
+            <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed proposal-cover-letter line-clamp-4"></p>
+          </div>
+
+          <p class="text-xs text-slate-400 proposal-date mb-4"></p>
+
+          <!-- Accept / Reject (only for PENDING) -->
+          <div class="action-buttons flex gap-3">
+            <button class="btn-accept flex-1 flex items-center justify-center gap-2 py-2.5 bg-green-500 text-white rounded-xl font-semibold text-sm hover:bg-green-600 transition-all">
+              <span class="material-symbols-outlined text-lg">check_circle</span> Accept & Fund Escrow
+            </button>
+            <button class="btn-reject flex items-center justify-center gap-2 px-4 py-2.5 border border-red-200 text-red-500 rounded-xl font-semibold text-sm hover:bg-red-50 transition-all">
+              <span class="material-symbols-outlined text-lg">cancel</span> Reject
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script src="/static/js/api.js"></script>
+<script>
+if (!isLoggedIn()) window.location.href = '/login/';
+
+let allProposals = [];
+
+// ── Load notifications & show popup if unread ─────────────────────────────
+async function checkNotifications() {
+  try {
+    const token = localStorage.getItem('access_token');
+    const res = await fetch('/api/notifications/', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    // Bell badge
+    if (data.unread_count > 0) {
+      const badge = document.getElementById('bellBadge');
+      badge.textContent = data.unread_count > 9 ? '9+' : data.unread_count;
+      badge.classList.remove('hidden');
+    }
+
+    // Show popup only once per session
+    const popupShown = sessionStorage.getItem('notif_popup_shown');
+    if (!popupShown && data.unread_count > 0) {
+      sessionStorage.setItem('notif_popup_shown', '1');
+      showNotifPopup(data.notifications.filter(n => !n.is_read), data.unread_count);
+    }
+  } catch (e) {}
+}
+
+function showNotifPopup(notifs, count) {
+  document.getElementById('popupCount').textContent = `${count} unread notification${count > 1 ? 's' : ''}`;
+  const list = document.getElementById('popupNotifList');
+  const iconMap = {
+    PROPOSAL: 'description', ACCEPTED: 'check_circle', REJECTED: 'cancel',
+    FUNDED: 'account_balance_wallet', RELEASED: 'payments', MESSAGE: 'chat', GENERAL: 'info'
+  };
+  list.innerHTML = notifs.slice(0, 5).map(n => `
+    <div class="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+      <span class="material-symbols-outlined text-blue-500 text-lg mt-0.5">${iconMap[n.notif_type] || 'notifications'}</span>
+      <div>
+        <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">${n.title}</p>
+        <p class="text-xs text-slate-500 mt-0.5">${n.message}</p>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('notifPopup').classList.remove('hidden');
+}
+
+function closePopup() {
+  document.getElementById('notifPopup').classList.add('hidden');
+  // Mark all as read
+  const token = localStorage.getItem('access_token');
+  fetch('/api/notifications/mark-all-read/', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token }
+  });
+  document.getElementById('bellBadge').classList.add('hidden');
+}
+
+function goToNotifications() {
+  closePopup();
+  window.location.href = '/notifications/';
+}
+
+// ── Load proposals ────────────────────────────────────────────────────────
+async function loadProposals() {
+  try {
+    const token = localStorage.getItem('access_token');
+    const info = await fetchUserInfo();
+    if (info) document.getElementById('username').textContent = info.username;
+
+    // Load client's projects first to populate filter
+    const projRes = await fetch('/api/projects/?mine=true', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (projRes.ok) {
+      const projects = await projRes.json();
+      const sel = document.getElementById('projectFilter');
+      (projects.results || projects).forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.title;
+        sel.appendChild(opt);
+      });
+    }
+
+    // Load all proposals across all projects
+    const allProjects = await (await fetch('/api/projects/?mine=true', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    })).json();
+
+    const projectList = allProjects.results || allProjects;
+    allProposals = [];
+
+    await Promise.all(projectList.map(async p => {
+      const res = await fetch(`/api/proposals/project/${p.id}/`, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        allProposals.push(...(data.results || data));
+      }
+    }));
+
+    renderProposals(allProposals);
+  } catch (e) {
+    console.error(e);
+  } finally {
+    document.getElementById('loadingState').classList.add('hidden');
+  }
+}
+
+function filterByProject() {
+  const projectId = document.getElementById('projectFilter').value;
+  const filtered = projectId
+    ? allProposals.filter(p => String(p.project) === projectId)
+    : allProposals;
+  renderProposals(filtered);
+}
+
+function renderProposals(proposals) {
+  const list = document.getElementById('proposalsList');
+  const empty = document.getElementById('emptyState');
+
+  if (proposals.length === 0) {
+    list.classList.add('hidden');
+    empty.classList.remove('hidden');
+    return;
+  }
+
+  empty.classList.add('hidden');
+  list.classList.remove('hidden');
+  list.innerHTML = '';
+
+  proposals.forEach(proposal => {
+    const tmpl = document.getElementById('proposalTemplate').content.cloneNode(true);
+    const card = tmpl.querySelector('.proposal-card');
+    const fp = proposal.freelancer_profile;
+    const fullName = fp ? ([fp.first_name, fp.last_name].filter(Boolean).join(' ') || fp.username) : proposal.freelancer_username;
+    const initials = fullName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+
+    // Status bar color
+    const barColors = { PENDING: 'bg-amber-400', ACCEPTED: 'bg-green-500', REJECTED: 'bg-red-400' };
+    tmpl.querySelector('.status-bar').className = `status-bar h-1 ${barColors[proposal.status] || 'bg-slate-200'}`;
+
+    // Freelancer info
+    tmpl.querySelector('.avatar-circle').textContent = initials;
+    tmpl.querySelector('.freelancer-name').textContent = fullName;
+    tmpl.querySelector('.freelancer-title').textContent = fp?.title || fp?.category?.replace(/_/g, ' ') || '';
+    tmpl.querySelector('.freelancer-rating').textContent = fp?.rating?.toFixed(1) || '0.0';
+    tmpl.querySelector('.freelancer-projects').textContent = fp?.completed_projects ?? 0;
+
+    const avEl = tmpl.querySelector('.freelancer-availability');
+    const avMap = { available: '🟢 Available', busy: '🟡 Busy', not_available: '🔴 Not Available' };
+    avEl.textContent = avMap[fp?.availability] || '';
+
+    // Skills
+    const skillsEl = tmpl.querySelector('.skills-container');
+    if (fp?.skills) {
+      skillsEl.innerHTML = fp.skills.split(',').slice(0, 4).map(s =>
+        `<span class="skill-tag">${s.trim()}</span>`
+      ).join('');
+    }
+
+    // Proposal details
+    tmpl.querySelector('.proposal-project-title').textContent = proposal.project_title;
+    tmpl.querySelector('.proposal-bid').textContent = '$' + Number(proposal.bid_amount).toLocaleString();
+    tmpl.querySelector('.proposal-delivery').textContent = proposal.delivery_time + ' days';
+    tmpl.querySelector('.proposal-cover-letter').textContent = proposal.cover_letter;
+    tmpl.querySelector('.proposal-date').textContent = 'Submitted ' + new Date(proposal.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+    // Status badge
+    const badge = tmpl.querySelector('.proposal-status-badge');
+    const badgeClasses = {
+      PENDING: 'bg-amber-100 text-amber-700',
+      ACCEPTED: 'bg-green-100 text-green-700',
+      REJECTED: 'bg-red-100 text-red-600',
+    };
+    badge.textContent = proposal.status;
+    badge.className = `proposal-status-badge px-3 py-1 rounded-full text-xs font-bold ${badgeClasses[proposal.status] || ''}`;
+
+    // Hide action buttons if not PENDING
+    if (proposal.status !== 'PENDING') {
+      tmpl.querySelector('.action-buttons').classList.add('hidden');
+    }
+
+    // Button actions
+    tmpl.querySelector('.btn-view-profile').addEventListener('click', () => {
+      if (fp?.id) window.location.href = `/freelancer/profile/${fp.id}/`;
+    });
+
+    tmpl.querySelector('.btn-chat').addEventListener('click', () => {
+      localStorage.setItem('chat_with_profile_id', fp?.id || '');
+      localStorage.setItem('chat_with_name', fullName);
+      window.location.href = '/chat/';
+    });
+
+    tmpl.querySelector('.btn-copy-wallet').addEventListener('click', function() {
+      const wallet = fp?.eth_wallet_address;
+      if (!wallet) { alert('No ETH wallet on this profile.'); return; }
+      navigator.clipboard.writeText(wallet).then(() => {
+        this.innerHTML = '<span class="material-symbols-outlined text-sm">check</span> Copied!';
+        setTimeout(() => {
+          this.innerHTML = '<span class="material-symbols-outlined text-sm">account_balance_wallet</span> Copy Wallet';
+        }, 2000);
+      });
+    });
+
+    tmpl.querySelector('.btn-accept').addEventListener('click', () => acceptProposal(proposal.id));
+    tmpl.querySelector('.btn-reject').addEventListener('click', () => rejectProposal(proposal.id));
+
+    list.appendChild(tmpl);
+  });
+}
+
+async function acceptProposal(proposalId) {
+  if (!confirm('Accept this proposal? All other proposals for this project will be rejected.')) return;
+  try {
+    const token = localStorage.getItem('access_token');
+    const res = await fetch(`/api/proposals/${proposalId}/accept/`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert('Proposal accepted! Redirecting to fund escrow...');
+      window.location.href = data.redirect || `/client/escrow/fund/${proposalId}/`;
+    } else {
+      alert(data.error || 'Failed to accept proposal.');
+    }
+  } catch (e) {
+    alert('Network error. Please try again.');
+  }
+}
+
+async function rejectProposal(proposalId) {
+  if (!confirm('Reject this proposal?')) return;
+  try {
+    const token = localStorage.getItem('access_token');
+    const res = await fetch(`/api/proposals/${proposalId}/reject/`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (res.ok) {
+      loadProposals();
+    } else {
+      const data = await res.json();
+      alert(data.error || 'Failed to reject proposal.');
+    }
+  } catch (e) {
+    alert('Network error.');
+  }
+}
+
+function logout() {
+  localStorage.clear();
+  window.location.href = '/login/';
+}
+
+fetchUserInfo().then(info => {
+  if (info) document.getElementById('username').textContent = info.username;
+});
+
+checkNotifications();
+loadProposals();
+</script>
+</body>
+</html>

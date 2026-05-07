@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TechTaskSoln - Earnings & Wallet</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "primary": "#add8e6",
+                    "navy": "#1e293b",
+                    "background-light": "#f6f7f8",
+                    "background-dark": "#141c1e",
+                },
+                fontFamily: { "display": ["Manrope", "sans-serif"] },
+                borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+        },
+    }
+</script>
+<style>
+    body { font-family: 'Manrope', sans-serif; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 1s linear infinite; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    .fade-up { animation: fadeUp 0.4s ease forwards; }
+</style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 transition-colors duration-200">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 lg:px-10 py-3">
+<button id="hamburger-btn" onclick="toggleSidebar()" class="flex items-center justify-center size-10 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300 mr-4" aria-label="Toggle sidebar">
+    <span class="material-symbols-outlined text-2xl">menu</span>
+</button>
+<div class="flex items-center gap-8">
+<a href="/" class="flex items-center gap-3 no-underline">
+<div class="flex items-center justify-center size-10 rounded-lg bg-primary/20 text-navy">
+<span class="material-symbols-outlined text-3xl">terminal</span>
+</div>
+<h2 class="text-navy dark:text-white text-xl font-extrabold tracking-tight">TechTaskSoln</h2>
+</a>
+</div>
+<div class="flex items-center gap-4">
+<a href="/notifications/" class="flex items-center justify-center size-10 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 relative">
+<span class="material-symbols-outlined">notifications</span>
+<span id="notifBadge" class="hidden absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold"></span>
+</a>
+<div class="h-8 w-[1px] bg-slate-200 dark:bg-slate-700 mx-2"></div>
+<div class="flex items-center gap-3">
+<div class="hidden lg:block text-right">
+<p id="userName" class="text-xs font-bold text-navy dark:text-white leading-none">—</p>
+<p class="text-[10px] text-slate-500 leading-none mt-1">Freelancer</p>
+</div>
+<button onclick="logout()" class="text-slate-400 hover:text-red-500">
+  <span class="material-symbols-outlined">logout</span>
+</button>
+</div>
+</div>
+</header>
+<div class="flex flex-1">
+<main class="min-h-screen flex-1 px-6 lg:px-10 py-8 max-w-[1200px] mx-auto w-full">
+<!-- Hero Header -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 fade-up">
+<div>
+<h1 class="text-3xl font-black text-navy dark:text-white tracking-tight">Earnings & Wallet</h1>
+<p class="text-slate-500 dark:text-slate-400 mt-1">Manage your blockchain earnings and MetaMask wallet.</p>
+</div>
+<div class="flex gap-3">
+<button id="connectMetaMaskBtn" onclick="connectMetaMask()" class="flex items-center gap-2 px-4 py-2 bg-navy text-white rounded-lg text-sm font-bold shadow-sm hover:bg-slate-800 transition-all">
+<span class="material-symbols-outlined text-lg">account_balance_wallet</span>
+<span id="walletBtnText">Connect MetaMask</span>
+</button>
+</div>
+</div>
+
+<!-- Loading State -->
+<div id="loadingState" class="flex flex-col items-center justify-center py-24">
+  <div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full spinner mb-4"></div>
+  <p class="text-slate-400 text-sm">Loading wallet data...</p>
+</div>
+
+<!-- Content (hidden until loaded) -->
+<div id="dashContent" class="hidden space-y-6">
+
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 fade-up">
+<div class="flex flex-col gap-3 rounded-2xl p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start">
+<div class="size-12 rounded-xl bg-primary/20 text-navy flex items-center justify-center">
+<span class="material-symbols-outlined">paid</span>
+</div>
+</div>
+<div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Earned</p>
+<p id="totalEarned" class="text-2xl font-black text-navy dark:text-white mt-1">0 ETH</p>
+</div>
+</div>
+<div class="flex flex-col gap-3 rounded-2xl p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start">
+<div class="size-12 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
+<span class="material-symbols-outlined">pending_actions</span>
+</div>
+</div>
+<div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Pending Escrow</p>
+<p id="pendingEscrow" class="text-2xl font-black text-navy dark:text-white mt-1">0 ETH</p>
+</div>
+</div>
+<div class="flex flex-col gap-3 rounded-2xl p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start">
+<div class="size-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+<span class="material-symbols-outlined">check_circle</span>
+</div>
+</div>
+<div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Released</p>
+<p id="releasedEth" class="text-2xl font-black text-navy dark:text-white mt-1">0 ETH</p>
+</div>
+</div>
+<div class="flex flex-col gap-3 rounded-2xl p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start">
+<div class="size-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+</div>
+</div>
+<div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">MetaMask Balance</p>
+<p id="walletBalance" class="text-2xl font-black text-navy dark:text-white mt-1">—</p>
+</div>
+</div>
+</div>
+
+<!-- Wallet Info + Recent Transactions -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 fade-up">
+
+<!-- Wallet Card -->
+<div class="rounded-2xl bg-gradient-to-br from-navy via-slate-800 to-slate-900 p-6 text-white shadow-lg">
+<h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined">account_balance_wallet</span> Your Wallet
+</h2>
+<div class="mb-4">
+<p class="text-xs text-slate-400 mb-1">Registered Address</p>
+<p id="registeredWallet" class="font-mono text-sm text-primary break-all">Not set</p>
+</div>
+<div class="mb-4">
+<p class="text-xs text-slate-400 mb-1">Connected MetaMask</p>
+<p id="metaMaskAddress" class="font-mono text-sm text-green-400 break-all">Not connected</p>
+</div>
+<div id="networkStatus" class="flex items-center gap-2 mb-4 p-2 rounded-lg bg-white/10">
+<div id="networkDot" class="w-2 h-2 rounded-full bg-slate-500"></div>
+<span id="networkName" class="text-xs font-medium">Not connected</span>
+</div>
+<button id="copyWalletBtn" onclick="copyRegisteredWallet()" class="w-full py-3 border border-white/20 rounded-xl text-sm font-bold hover:bg-white/10 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">content_copy</span> Copy Wallet Address
+</button>
+</div>
+
+<!-- Recent Transactions -->
+<div class="xl:col-span-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+<div class="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+<h2 class="text-lg font-bold text-navy dark:text-white">Escrow Transactions</h2>
+<span id="txCount" class="text-xs text-slate-400 font-semibold">0 transactions</span>
+</div>
+<div id="txTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
+<div class="p-8 text-center text-slate-400 text-sm">No transactions yet.</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/sidebar.js"></script>
+<script>
+if (!isLoggedIn()) window.location.href = '/login/';
+
+let walletData = null;
+let connectedAddress = null;
+
+async function loadDashboard() {
+  try {
+    // Load user info
+    const info = await fetchUserInfo();
+    if (info) document.getElementById('userName').textContent = info.username;
+
+    // Check unread notifications
+    try {
+      const notifRes = await apiCall('/notifications/unread-count/');
+      if (notifRes && notifRes.ok) {
+        const nd = await notifRes.json();
+        if (nd.unread_count > 0) {
+          const badge = document.getElementById('notifBadge');
+          badge.textContent = nd.unread_count > 9 ? '9+' : nd.unread_count;
+          badge.classList.remove('hidden');
+        }
+      }
+    } catch (e) {}
+
+    // Load wallet summary
+    const res = await apiCall('/blockchain/wallet-summary/');
+    if (!res || !res.ok) throw new Error('Failed to load wallet data');
+    walletData = await res.json();
+
+    // Also fetch profile total_earnings (the DB field updated on fund release)
+    let profileEarnings = 0;
+    try {
+      const profileRes = await apiCall('/auth/me/');
+      if (profileRes && profileRes.ok) {
+        const profileData = await profileRes.json();
+        if (profileData.freelancer_profile && profileData.freelancer_profile.total_earnings) {
+          profileEarnings = parseFloat(profileData.freelancer_profile.total_earnings);
+        }
+      }
+    } catch (e) {}
+
+    // Use the higher of profile earnings vs wallet summary (they should match, but profile is authoritative)
+    const totalEarned = Math.max(profileEarnings, parseFloat(walletData.total_earned_eth));
+
+    // Populate stats
+    document.getElementById('totalEarned').textContent = totalEarned.toFixed(4) + ' ETH';
+    document.getElementById('pendingEscrow').textContent = parseFloat(walletData.pending_escrow_eth).toFixed(4) + ' ETH';
+    document.getElementById('releasedEth').textContent = parseFloat(walletData.released_eth).toFixed(4) + ' ETH';
+    document.getElementById('registeredWallet').textContent = walletData.wallet_address || 'Not set — update in your profile';
+
+    // Populate transactions
+    document.getElementById('txCount').textContent = walletData.total_transactions + ' transaction(s)';
+    const txBody = document.getElementById('txTableBody');
+
+    if (walletData.transactions.length === 0) {
+      txBody.innerHTML = '<div class="p-8 text-center text-slate-400 text-sm">No escrow transactions yet.</div>';
+    } else {
+      txBody.innerHTML = '';
+      walletData.transactions.forEach(tx => {
+        const statusColors = {
+          EMPTY: 'bg-slate-100 text-slate-600',
+          FUNDED: 'bg-blue-100 text-blue-700',
+          RELEASED: 'bg-green-100 text-green-700',
+          REFUNDED: 'bg-orange-100 text-orange-700',
+          DISPUTED: 'bg-red-100 text-red-700',
+        };
+        const statusClass = statusColors[tx.status] || 'bg-slate-100 text-slate-600';
+        const date = new Date(tx.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const txHash = tx.tx_hash_released || tx.tx_hash_funded || '';
+        const etherscanLink = txHash ? `https://sepolia.etherscan.io/tx/${txHash}` : '';
+
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors';
+        row.innerHTML = `
+          <div class="flex items-center gap-4 flex-1 min-w-0">
+            <div class="size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-navy dark:text-primary shrink-0">
+              <span class="material-symbols-outlined text-xl">${tx.status === 'RELEASED' ? 'check_circle' : tx.status === 'FUNDED' ? 'lock' : 'pending'}</span>
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm font-bold text-navy dark:text-white truncate">${tx.project_title || 'Project #' + tx.project}</p>
+              <p class="text-xs text-slate-500">${date}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">${tx.status}</span>
+            <p class="text-sm font-bold text-navy dark:text-white w-24 text-right">${parseFloat(tx.amount_eth).toFixed(4)} ETH</p>
+            ${etherscanLink ? `<a href="${etherscanLink}" target="_blank" class="text-primary hover:underline"><span class="material-symbols-outlined text-sm">open_in_new</span></a>` : '<span class="w-6"></span>'}
+          </div>
+        `;
+        txBody.appendChild(row);
+      });
+    }
+
+    document.getElementById('loadingState').classList.add('hidden');
+    document.getElementById('dashContent').classList.remove('hidden');
+
+  } catch (e) {
+    console.error(e);
+    document.getElementById('loadingState').innerHTML = `
+      <span class="material-symbols-outlined text-5xl text-red-300 block mb-3">error</span>
+      <p class="text-red-500 font-semibold">Failed to load wallet data</p>
+      <p class="text-slate-400 text-sm mt-1">${e.message}</p>`;
+  }
+}
+
+async function connectMetaMask() {
+  if (typeof window.ethereum === 'undefined') {
+    alert('MetaMask is not installed. Please install the MetaMask browser extension.');
+    return;
+  }
+
+  const btn = document.getElementById('connectMetaMaskBtn');
+  btn.disabled = true;
+  document.getElementById('walletBtnText').textContent = 'Connecting...';
+
+  try {
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    connectedAddress = accounts[0];
+    document.getElementById('metaMaskAddress').textContent = connectedAddress;
+    document.getElementById('walletBtnText').textContent = connectedAddress.slice(0, 6) + '...' + connectedAddress.slice(-4);
+
+    // Check network
+    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+    const networkDot = document.getElementById('networkDot');
+    const networkName = document.getElementById('networkName');
+    if (chainId === '0xaa36a7') {
+      networkDot.className = 'w-2 h-2 rounded-full bg-green-500';
+      networkName.textContent = 'Sepolia Testnet';
+      networkName.className = 'text-xs font-medium text-green-400';
+    } else {
+      networkDot.className = 'w-2 h-2 rounded-full bg-red-500';
+      networkName.textContent = 'Wrong Network — Switch to Sepolia';
+      networkName.className = 'text-xs font-medium text-red-400';
+    }
+
+    // Get balance
+    const balanceHex = await window.ethereum.request({
+      method: 'eth_getBalance',
+      params: [connectedAddress, 'latest'],
+    });
+    const balanceWei = parseInt(balanceHex, 16);
+    const balanceEth = balanceWei / 1e18;
+    document.getElementById('walletBalance').textContent = balanceEth.toFixed(4) + ' ETH';
+
+    // Listen for changes
+    window.ethereum.on('accountsChanged', (accs) => {
+      if (accs.length === 0) {
+        document.getElementById('metaMaskAddress').textContent = 'Disconnected';
+        document.getElementById('walletBtnText').textContent = 'Connect MetaMask';
+        document.getElementById('walletBalance').textContent = '—';
+        btn.disabled = false;
+      } else {
+        connectedAddress = accs[0];
+        document.getElementById('metaMaskAddress').textContent = connectedAddress;
+        document.getElementById('walletBtnText').textContent = connectedAddress.slice(0, 6) + '...' + connectedAddress.slice(-4);
+      }
+    });
+
+  } catch (err) {
+    if (err.code === 4001) {
+      alert('Connection rejected by user.');
+    } else {
+      alert('Error: ' + err.message);
+    }
+    document.getElementById('walletBtnText').textContent = 'Connect MetaMask';
+    btn.disabled = false;
+  }
+}
+
+function copyRegisteredWallet() {
+  const wallet = walletData?.wallet_address;
+  if (!wallet) { alert('No wallet address set. Update your profile first.'); return; }
+  navigator.clipboard.writeText(wallet).then(() => {
+    const btn = document.getElementById('copyWalletBtn');
+    btn.innerHTML = '<span class="material-symbols-outlined text-sm">check</span> Copied!';
+    setTimeout(() => {
+      btn.innerHTML = '<span class="material-symbols-outlined text-sm">content_copy</span> Copy Wallet Address';
+    }, 2000);
+  });
+}
+
+loadDashboard();
+</script>
+</body></html>

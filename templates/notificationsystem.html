@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "primary": "#add8e6",
+                    "navy": "#1e3a8a",
+                    "background-light": "#f6f7f8",
+                    "background-dark": "#141c1e",
+                },
+                fontFamily: { "display": ["Manrope", "sans-serif"] },
+                borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+            },
+        },
+    }
+</script>
+<title>TechTaskSoln Notifications</title>
+<style>
+    body { font-family: 'Manrope', sans-serif; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+    .notif-card { animation: slideDown 0.3s ease forwards; }
+</style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Header -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark px-6 md:px-20 py-4 sticky top-0 z-50">
+<a href="/" class="flex items-center gap-4 no-underline">
+<div class="size-8 bg-primary rounded-lg flex items-center justify-center text-navy">
+<span class="material-symbols-outlined font-bold">rocket_launch</span>
+</div>
+<h2 class="text-navy dark:text-primary text-xl font-extrabold leading-tight tracking-tight">TechTaskSoln</h2>
+</a>
+<div class="flex flex-1 justify-end gap-6 items-center">
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-slate-600 dark:text-slate-300 text-sm font-semibold hover:text-navy dark:hover:text-primary transition-colors" href="#" id="dash-link">Dashboard</a>
+<a class="text-slate-600 dark:text-slate-300 text-sm font-semibold hover:text-navy dark:hover:text-primary transition-colors" href="/freelancer/projects/">Projects</a>
+<a class="text-slate-600 dark:text-slate-300 text-sm font-semibold hover:text-navy dark:hover:text-primary transition-colors" href="/chat/">Messages</a>
+</nav>
+<div class="flex gap-3">
+<button class="flex items-center justify-center rounded-full size-10 bg-primary/20 text-navy hover:bg-primary/40 transition-all">
+<span class="material-symbols-outlined text-[22px]">notifications</span>
+</button>
+<button onclick="logout()" class="flex items-center justify-center rounded-full size-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-red-100 hover:text-red-500 transition-all">
+<span class="material-symbols-outlined text-[22px]">logout</span>
+</button>
+</div>
+</div>
+</header>
+<main class="flex flex-1 justify-center py-8 px-4 md:px-10">
+<div class="layout-content-container flex flex-col max-w-[1024px] flex-1 gap-6">
+<!-- Page Title Area -->
+<div class="flex flex-wrap items-end justify-between gap-4 px-2">
+<div>
+<h1 class="text-slate-900 dark:text-white text-3xl font-extrabold tracking-tight">Notification Center</h1>
+<p class="text-slate-500 dark:text-slate-400 mt-1">Stay updated with your latest project activities and team messages.</p>
+</div>
+<button id="markAllReadBtn" class="flex items-center justify-center gap-2 rounded-xl h-11 px-6 bg-navy text-white text-sm font-bold hover:bg-navy/90 transition-all shadow-sm shadow-navy/20">
+<span class="material-symbols-outlined text-[20px]">done_all</span>
+<span>Mark all as read</span>
+</button>
+</div>
+<!-- Filter Tabs -->
+<div class="flex gap-2 p-1 overflow-x-auto no-scrollbar bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800">
+<button onclick="filterNotifs('all')" class="filter-tab active flex h-10 shrink-0 items-center justify-center px-5 rounded-lg bg-primary text-navy text-sm font-bold transition-all" data-filter="all">
+    All Activities
+</button>
+<button onclick="filterNotifs('PROPOSAL')" class="filter-tab flex h-10 shrink-0 items-center justify-center px-5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-semibold transition-all" data-filter="PROPOSAL">
+    Proposals
+</button>
+<button onclick="filterNotifs('ACCEPTED')" class="filter-tab flex h-10 shrink-0 items-center justify-center px-5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-semibold transition-all" data-filter="ACCEPTED">
+    Accepted
+</button>
+<button onclick="filterNotifs('FUNDED')" class="filter-tab flex h-10 shrink-0 items-center justify-center px-5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-semibold transition-all" data-filter="FUNDED">
+    Payments
+</button>
+<button onclick="filterNotifs('MESSAGE')" class="filter-tab flex h-10 shrink-0 items-center justify-center px-5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-semibold transition-all" data-filter="MESSAGE">
+    Messages
+</button>
+</div>
+<!-- Dynamic Notification List -->
+<div id="notifications-container" class="flex flex-col gap-3">
+    <div class="text-center py-12">
+        <span class="material-symbols-outlined text-5xl text-slate-300 animate-pulse">hourglass_top</span>
+        <p class="text-slate-400 mt-4">Loading notifications...</p>
+    </div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark px-10 py-6 text-center">
+<p class="text-slate-500 text-xs font-medium">© 2025 TechTaskSoln Management Portal. All rights reserved.</p>
+</footer>
+</div>
+</div>
+<script src="/static/js/api.js"></script>
+<script>
+let allNotifications = [];
+
+const NOTIF_CONFIG = {
+    PROPOSAL:  { icon: 'description',           bg: 'bg-primary/20',                       text: 'text-navy',    label: 'New Proposal' },
+    ACCEPTED:  { icon: 'check_circle',           bg: 'bg-green-100 dark:bg-green-900/30',   text: 'text-green-600', label: 'Accepted' },
+    REJECTED:  { icon: 'cancel',                 bg: 'bg-red-100 dark:bg-red-900/30',       text: 'text-red-500',   label: 'Rejected' },
+    FUNDED:    { icon: 'account_balance_wallet',  bg: 'bg-blue-100 dark:bg-blue-900/30',     text: 'text-blue-600',  label: 'Escrow Funded' },
+    RELEASED:  { icon: 'payments',               bg: 'bg-green-100 dark:bg-green-900/30',   text: 'text-green-600', label: 'Payment Released' },
+    COMPLETED: { icon: 'task_alt',               bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-600', label: 'Project Completed' },
+    DISPUTED:  { icon: 'gavel',                  bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-600', label: 'Dispute' },
+    MESSAGE:   { icon: 'chat_bubble',            bg: 'bg-navy',                             text: 'text-primary',   label: 'Message' },
+    GENERAL:   { icon: 'info',                   bg: 'bg-slate-100 dark:bg-slate-800',      text: 'text-slate-600', label: 'General' },
+};
+
+function timeAgo(dateStr) {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.floor((now - d) / 1000);
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function renderNotifications(notifs) {
+    const container = document.getElementById('notifications-container');
+    if (notifs.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-16">
+                <span class="material-symbols-outlined text-5xl text-slate-300 block mb-3">notifications_off</span>
+                <p class="text-slate-400 font-semibold">No notifications</p>
+                <p class="text-slate-400 text-sm mt-1">You're all caught up!</p>
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = '';
+    notifs.forEach((n, i) => {
+        const cfg = NOTIF_CONFIG[n.notif_type] || NOTIF_CONFIG.GENERAL;
+        const isRead = n.is_read;
+        const div = document.createElement('div');
+        div.className = `notif-card flex items-center gap-4 bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 transition-all shadow-sm cursor-pointer ${isRead ? 'opacity-70' : ''}`;
+        div.style.animationDelay = `${i * 50}ms`;
+        div.innerHTML = `
+            <div class="flex items-center justify-center rounded-xl ${cfg.bg} ${cfg.text} size-14 shrink-0">
+                <span class="material-symbols-outlined text-[28px]">${cfg.icon}</span>
+            </div>
+            <div class="flex flex-1 flex-col gap-0.5">
+                <div class="flex items-center justify-between">
+                    <p class="text-slate-900 dark:text-white text-base font-bold">${n.title || 'Notification'}</p>
+                    <span class="text-slate-400 dark:text-slate-500 text-xs font-medium">${timeAgo(n.created_at)}</span>
+                </div>
+                <p class="${cfg.text} text-xs font-bold uppercase tracking-wider">${cfg.label}</p>
+                <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mt-1">${n.message}</p>
+            </div>
+            ${!isRead ? '<div class="shrink-0 size-2 bg-primary rounded-full"></div>' : ''}
+        `;
+        // Mark read on click
+        div.addEventListener('click', async () => {
+            if (!isRead) {
+                await apiCall(`/notifications/${n.id}/read/`, 'POST');
+                n.is_read = true;
+                div.classList.add('opacity-70');
+                div.querySelector('.size-2')?.remove();
+            }
+            // Navigate based on notification type and context
+            if (n.notif_type === 'COMPLETED' && n.related_project_id) {
+                window.location.href = `/client/projects/${n.related_project_id}/review/`;
+            } else if (n.notif_type === 'PROPOSAL') {
+                window.location.href = '/client/proposals/';
+            } else if (n.notif_type === 'ACCEPTED' && n.related_project_id) {
+                window.location.href = `/freelancer/workspace/?project=${n.related_project_id}`;
+            } else if (n.notif_type === 'FUNDED' && n.related_project_id) {
+                window.location.href = `/freelancer/workspace/?project=${n.related_project_id}`;
+            } else if (n.notif_type === 'RELEASED') {
+                window.location.href = '/freelancer/earnings/';
+            } else if (n.notif_type === 'GENERAL' && n.related_project_id) {
+                window.location.href = `/projects/${n.related_project_id}/`;
+            }
+        });
+        container.appendChild(div);
+    });
+}
+
+function filterNotifs(type) {
+    // Update tabs
+    document.querySelectorAll('.filter-tab').forEach(t => {
+        t.className = t.dataset.filter === type
+            ? 'filter-tab active flex h-10 shrink-0 items-center justify-center px-5 rounded-lg bg-primary text-navy text-sm font-bold transition-all'
+            : 'filter-tab flex h-10 shrink-0 items-center justify-center px-5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-semibold transition-all';
+    });
+
+    if (type === 'all') {
+        renderNotifications(allNotifications);
+    } else if (type === 'FUNDED') {
+        // Show funded + released
+        renderNotifications(allNotifications.filter(n => ['FUNDED', 'RELEASED'].includes(n.notif_type)));
+    } else {
+        renderNotifications(allNotifications.filter(n => n.notif_type === type));
+    }
+}
+
+(async function() {
+    if (!requireAuth()) return;
+    const info = await fetchUserInfo();
+    if (info) {
+        document.getElementById('dash-link').href = info.is_client ? '/client/dashboard/' : '/freelancer/dashboard/';
+    }
+
+    const container = document.getElementById('notifications-container');
+    const res = await apiCall('/notifications/');
+    if (!res || !res.ok) {
+        container.innerHTML = '<p class="text-center py-8 text-red-500">Failed to load notifications.</p>';
+        return;
+    }
+    const data = await res.json();
+    allNotifications = data.notifications || data.results || data;
+
+    renderNotifications(allNotifications);
+
+    document.getElementById('markAllReadBtn').addEventListener('click', async () => {
+        const r = await apiCall('/notifications/mark-all-read/', 'POST');
+        if (r && r.ok) {
+            showAlert('All notifications marked as read.', 'success');
+            allNotifications.forEach(n => n.is_read = true);
+            renderNotifications(allNotifications);
+        }
+    });
+})();
+</script>
+</body></html>

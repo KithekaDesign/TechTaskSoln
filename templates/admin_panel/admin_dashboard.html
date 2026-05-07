@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TechTaskSoln | Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "primary": "#add8e6",
+                    "navy": "#1e3a8a",
+                    "background-light": "#f6f7f8",
+                    "background-dark": "#141c1e",
+                },
+                fontFamily: { "display": ["Manrope", "sans-serif"] },
+                borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+        },
+    }
+</script>
+<style>
+    body { font-family: 'Manrope', sans-serif; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    #sidebar::-webkit-scrollbar { width: 4px; }
+    #sidebar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+</style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
+
+<main class="min-h-screen flex flex-col">
+<!-- Top Nav -->
+<header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-10">
+<div class="flex items-center gap-3">
+<button id="hamburger-btn" onclick="toggleSidebar()" class="flex items-center justify-center size-10 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300" aria-label="Toggle sidebar">
+    <span class="material-symbols-outlined text-2xl">menu</span>
+</button>
+<h2 class="text-lg font-bold text-slate-900 dark:text-white">Admin Panel</h2>
+</div>
+<div class="flex items-center gap-3">
+    <a href="/notifications/" class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg relative">
+        <span class="material-symbols-outlined">notifications</span>
+        <span id="notif-badge" class="hidden absolute top-1 right-1 size-2 bg-red-500 rounded-full"></span>
+    </a>
+</div>
+</header>
+
+<div class="p-8 space-y-8 max-w-7xl mx-auto w-full">
+<!-- Dashboard Header -->
+<div>
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white">Admin Dashboard</h1>
+    <p class="text-slate-500 mt-1" id="welcome-text">Platform overview and management tools.</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+            <div class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
+                <span class="material-symbols-outlined">people</span>
+            </div>
+        </div>
+        <p class="text-slate-500 text-sm font-medium">Total Users</p>
+        <h3 class="text-2xl font-bold mt-1" id="stat-users">—</h3>
+    </div>
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+            <div class="p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                <span class="material-symbols-outlined">work</span>
+            </div>
+        </div>
+        <p class="text-slate-500 text-sm font-medium">Total Projects</p>
+        <h3 class="text-2xl font-bold mt-1" id="stat-projects">—</h3>
+    </div>
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+            <div class="p-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg">
+                <span class="material-symbols-outlined">pending_actions</span>
+            </div>
+        </div>
+        <p class="text-slate-500 text-sm font-medium">In Progress</p>
+        <h3 class="text-2xl font-bold mt-1" id="stat-in-progress">—</h3>
+    </div>
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+            <div class="p-2 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg">
+                <span class="material-symbols-outlined">description</span>
+            </div>
+        </div>
+        <p class="text-slate-500 text-sm font-medium">Total Proposals</p>
+        <h3 class="text-2xl font-bold mt-1" id="stat-proposals">—</h3>
+    </div>
+</div>
+
+<!-- Quick Actions + Activity -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Quick Actions -->
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+        <h3 class="font-bold text-lg mb-6">Quick Actions</h3>
+        <div class="space-y-3">
+            <a href="/admin-panel/users/" class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                <div class="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                    <span class="material-symbols-outlined text-blue-600">people</span>
+                </div>
+                <div>
+                    <p class="text-sm font-bold">User Management</p>
+                    <p class="text-xs text-slate-500">Manage users, roles & permissions</p>
+                </div>
+            </a>
+            <a href="/admin-panel/projects/" class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                <div class="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
+                    <span class="material-symbols-outlined text-indigo-600">work</span>
+                </div>
+                <div>
+                    <p class="text-sm font-bold">Project Monitoring</p>
+                    <p class="text-xs text-slate-500">Monitor active projects & escrows</p>
+                </div>
+            </a>
+            <a href="/admin-panel/fraud/" class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                <div class="p-2 bg-red-50 dark:bg-red-900/30 rounded-lg">
+                    <span class="material-symbols-outlined text-red-600">gpp_maybe</span>
+                </div>
+                <div>
+                    <p class="text-sm font-bold">Fraud Monitoring</p>
+                    <p class="text-xs text-slate-500">Review flagged activities</p>
+                </div>
+            </a>
+            <a href="/admin-panel/reports/" class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                <div class="p-2 bg-green-50 dark:bg-green-900/30 rounded-lg">
+                    <span class="material-symbols-outlined text-green-600">analytics</span>
+                </div>
+                <div>
+                    <p class="text-sm font-bold">Reports & Analytics</p>
+                    <p class="text-xs text-slate-500">Platform-wide reports</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <h3 class="font-bold text-lg">Recent Platform Activity</h3>
+            <a href="/notifications/" class="text-primary text-sm font-bold hover:underline">View All</a>
+        </div>
+        <div id="activity-feed" class="divide-y divide-slate-50 dark:divide-slate-800">
+            <div class="p-6 text-center text-slate-400 text-sm">Loading activity...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Project Status Breakdown -->
+<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+    <h3 class="font-bold text-lg mb-6">Project Status Breakdown</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="flex items-center gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+            <div class="p-3 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                <span class="material-symbols-outlined text-blue-600 text-2xl">folder_open</span>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-slate-500">Open</p>
+                <p class="text-xl font-bold" id="stat-open">—</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
+            <div class="p-3 bg-amber-100 dark:bg-amber-900/40 rounded-lg">
+                <span class="material-symbols-outlined text-amber-600 text-2xl">engineering</span>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-slate-500">In Progress</p>
+                <p class="text-xl font-bold" id="stat-in-progress-2">—</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
+            <div class="p-3 bg-green-100 dark:bg-green-900/40 rounded-lg">
+                <span class="material-symbols-outlined text-green-600 text-2xl">check_circle</span>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-slate-500">Completed</p>
+                <p class="text-xl font-bold" id="stat-completed">—</p>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+</main>
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/sidebar.js"></script>
+<script>
+(async function() {
+    if (!requireAuth()) return;
+    const info = await fetchUserInfo();
+
+    // Fetch dashboard stats
+    const statsRes = await apiCall('/dashboard/stats/');
+    if (statsRes && statsRes.ok) {
+        const s = await statsRes.json();
+        document.getElementById('stat-users').textContent = s.total_users || 0;
+        document.getElementById('stat-projects').textContent = s.total_projects || 0;
+        document.getElementById('stat-in-progress').textContent = s.in_progress_projects || 0;
+        document.getElementById('stat-proposals').textContent = s.total_proposals || 0;
+        document.getElementById('stat-open').textContent = s.open_projects || 0;
+        document.getElementById('stat-in-progress-2').textContent = s.in_progress_projects || 0;
+        document.getElementById('stat-completed').textContent = s.completed_projects || 0;
+    }
+
+    // Fetch recent notifications as activity feed
+    const notifRes = await apiCall('/notifications/');
+    if (notifRes && notifRes.ok) {
+        const data = await notifRes.json();
+        const feed = document.getElementById('activity-feed');
+        if (data.notifications && data.notifications.length > 0) {
+            feed.innerHTML = data.notifications.slice(0, 8).map(n => {
+                const icons = {
+                    'PROPOSAL': 'description', 'ACCEPTED': 'check_circle', 'REJECTED': 'cancel',
+                    'FUNDED': 'payments', 'RELEASED': 'paid', 'COMPLETED': 'task_alt',
+                    'DISPUTED': 'gpp_maybe', 'MESSAGE': 'chat', 'GENERAL': 'info'
+                };
+                const colors = {
+                    'PROPOSAL': 'blue', 'ACCEPTED': 'green', 'REJECTED': 'red',
+                    'FUNDED': 'indigo', 'RELEASED': 'emerald', 'COMPLETED': 'green',
+                    'DISPUTED': 'red', 'MESSAGE': 'amber', 'GENERAL': 'slate'
+                };
+                const icon = icons[n.notif_type] || 'info';
+                const color = colors[n.notif_type] || 'slate';
+                const time = new Date(n.created_at);
+                const ago = getTimeAgo(time);
+                return `
+                    <div class="p-4 flex items-start gap-4">
+                        <div class="size-10 rounded-full bg-${color}-100 dark:bg-${color}-900/30 flex items-center justify-center text-${color}-600 shrink-0">
+                            <span class="material-symbols-outlined text-xl">${icon}</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-bold text-slate-800 dark:text-slate-200">${n.title}</p>
+                            <p class="text-xs text-slate-500 mt-0.5 truncate">${n.message}</p>
+                            <p class="text-[10px] text-slate-400 mt-1">${ago}</p>
+                        </div>
+                    </div>`;
+            }).join('');
+        } else {
+            feed.innerHTML = '<div class="p-6 text-center text-slate-400 text-sm">No recent activity</div>';
+        }
+    }
+})();
+
+function getTimeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return Math.floor(seconds / 60) + ' min ago';
+    if (seconds < 86400) return Math.floor(seconds / 3600) + ' hours ago';
+    if (seconds < 604800) return Math.floor(seconds / 86400) + ' days ago';
+    return date.toLocaleDateString();
+}
+</script>
+</body></html>

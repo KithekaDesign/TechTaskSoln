@@ -1,0 +1,2073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fund Escrow | TechTaskSoln</title>
+  <meta name="description" content="Securely fund project escrow via blockchain smart contract on TechTaskSoln."/>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #111827;
+      --bg-card: rgba(17, 24, 39, 0.7);
+      --bg-card-hover: rgba(17, 24, 39, 0.85);
+      --bg-glass: rgba(255, 255, 255, 0.03);
+      --bg-glass-hover: rgba(255, 255, 255, 0.06);
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-medium: rgba(255, 255, 255, 0.1);
+      --border-accent: rgba(99, 102, 241, 0.3);
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-indigo: #818cf8;
+      --accent-violet: #a78bfa;
+      --accent-emerald: #34d399;
+      --accent-amber: #fbbf24;
+      --accent-rose: #fb7185;
+      --accent-sky: #38bdf8;
+      --gradient-primary: linear-gradient(135deg, #818cf8 0%, #a78bfa 50%, #c084fc 100%);
+      --gradient-success: linear-gradient(135deg, #34d399 0%, #22d3ee 100%);
+      --gradient-danger: linear-gradient(135deg, #fb7185 0%, #f472b6 100%);
+      --gradient-fund: linear-gradient(135deg, #818cf8 0%, #34d399 100%);
+      --shadow-glow: 0 0 40px rgba(129, 140, 248, 0.15);
+      --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --radius-2xl: 24px;
+      --radius-full: 999px;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Ambient Background ── */
+    .ambient-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .ambient-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.4;
+      animation: float 20s ease-in-out infinite;
+    }
+    .ambient-orb:nth-child(1) {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(129,140,248,0.2), transparent 70%);
+      top: -15%; left: -10%;
+      animation-delay: 0s;
+    }
+    .ambient-orb:nth-child(2) {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(52,211,153,0.12), transparent 70%);
+      top: 50%; right: -10%;
+      animation-delay: -7s;
+    }
+    .ambient-orb:nth-child(3) {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(167,139,250,0.15), transparent 70%);
+      bottom: -10%; left: 30%;
+      animation-delay: -14s;
+    }
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -20px) scale(1.05); }
+      66% { transform: translate(-20px, 15px) scale(0.95); }
+    }
+
+    /* ── Top Nav ── */
+    .top-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10, 14, 26, 0.8);
+      backdrop-filter: blur(20px) saturate(1.5);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .nav-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+    .nav-logo {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-md);
+      background: var(--gradient-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(129, 140, 248, 0.3);
+    }
+    .nav-logo .material-symbols-outlined { font-size: 18px; color: white; }
+    .nav-title {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-links a {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: var(--radius-full);
+      transition: all 0.2s;
+    }
+    .nav-links a:hover { color: var(--text-primary); background: var(--bg-glass-hover); }
+    .nav-links a.active { color: var(--accent-indigo); background: rgba(129, 140, 248, 0.1); }
+    .nav-logout {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-medium);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .nav-logout:hover {
+      border-color: rgba(251, 113, 133, 0.4);
+      color: var(--accent-rose);
+      background: rgba(251, 113, 133, 0.08);
+    }
+
+    /* ── Page Container ── */
+    .page-container {
+      position: relative;
+      z-index: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+    }
+
+    /* ── Breadcrumb ── */
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+    }
+    .breadcrumb a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .breadcrumb a:hover { color: var(--accent-indigo); }
+    .breadcrumb .current { color: var(--text-primary); font-weight: 700; }
+    .breadcrumb .material-symbols-outlined { font-size: 16px; }
+
+    /* ── Progress Stepper ── */
+    .stepper {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      max-width: 560px;
+      margin: 0 auto 40px;
+      position: relative;
+    }
+    .stepper-step {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+    }
+    .stepper-dot {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+    .stepper-step.completed .stepper-dot {
+      background: var(--accent-emerald);
+      color: white;
+      box-shadow: 0 0 20px rgba(52, 211, 153, 0.35);
+    }
+    .stepper-step.active .stepper-dot {
+      background: var(--accent-indigo);
+      color: white;
+      box-shadow: 0 0 24px rgba(129, 140, 248, 0.4);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    .stepper-step.pending .stepper-dot {
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-muted);
+    }
+    @keyframes pulse-dot {
+      0%, 100% { box-shadow: 0 0 24px rgba(129, 140, 248, 0.4); }
+      50% { box-shadow: 0 0 36px rgba(129, 140, 248, 0.6); }
+    }
+    .stepper-label {
+      margin-top: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.4;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .stepper-step.completed .stepper-label { color: var(--accent-emerald); }
+    .stepper-step.active .stepper-label { color: var(--accent-indigo); }
+    .stepper-step.pending .stepper-label { color: var(--text-muted); }
+    .stepper-line {
+      position: absolute;
+      top: 22px;
+      left: calc(50% + 22px);
+      right: calc(-50% + 22px);
+      height: 2px;
+      z-index: 1;
+      border-radius: 1px;
+    }
+    .stepper-step.completed .stepper-line { background: var(--accent-emerald); }
+    .stepper-step.active .stepper-line { background: linear-gradient(90deg, var(--accent-indigo), rgba(255,255,255,0.08)); }
+    .stepper-step.pending .stepper-line { background: rgba(255, 255, 255, 0.06); }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-2xl);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      transition: all 0.3s;
+    }
+    .card:hover { border-color: var(--border-medium); }
+    .card-body { padding: 28px; }
+    .card-header {
+      padding: 24px 28px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .card-header-flex {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* ── Section label ── */
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent-indigo);
+    }
+    .section-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-top: 6px;
+      line-height: 1.3;
+    }
+    .section-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      line-height: 1.7;
+      max-width: 600px;
+    }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .badge-warning {
+      background: rgba(251, 191, 36, 0.12);
+      color: var(--accent-amber);
+      border: 1px solid rgba(251, 191, 36, 0.2);
+    }
+    .badge-success {
+      background: rgba(52, 211, 153, 0.12);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(52, 211, 153, 0.2);
+    }
+    .badge-info {
+      background: rgba(129, 140, 248, 0.12);
+      color: var(--accent-indigo);
+      border: 1px solid rgba(129, 140, 248, 0.2);
+    }
+    .badge-danger {
+      background: rgba(251, 113, 133, 0.12);
+      color: var(--accent-rose);
+      border: 1px solid rgba(251, 113, 133, 0.2);
+    }
+
+    /* ── Stat Cards ── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+    @media (max-width: 640px) { .stat-grid { grid-template-columns: 1fr; } }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      transition: all 0.3s;
+    }
+    .stat-card:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: var(--border-medium);
+      transform: translateY(-2px);
+    }
+    .stat-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .stat-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-top: 10px;
+    }
+    .stat-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ── Layout Grid ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1.4fr 0.85fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* ── Checklist Dark Panel ── */
+    .checklist-panel {
+      margin-top: 24px;
+      background: linear-gradient(135deg, rgba(129, 140, 248, 0.08), rgba(167, 139, 250, 0.05));
+      border: 1px solid rgba(129, 140, 248, 0.15);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+    }
+    .checklist-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .checklist-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+    @media (max-width: 640px) { .checklist-grid { grid-template-columns: 1fr; } }
+
+    .checklist-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      transition: all 0.2s;
+    }
+    .checklist-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .checklist-item h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .checklist-item p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 6px;
+      line-height: 1.6;
+    }
+
+    /* ── Proposal Summary ── */
+    .proposal-summary {
+      margin-top: 24px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+    }
+    .proposal-text {
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text-secondary);
+      margin-top: 16px;
+    }
+
+    /* ── Freelancer Sidebar ── */
+    .freelancer-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-2xl);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+    }
+    .freelancer-header {
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .avatar {
+      width: 52px; height: 52px;
+      border-radius: var(--radius-lg);
+      background: var(--gradient-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 18px;
+      color: white;
+      flex-shrink: 0;
+    }
+    .freelancer-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .freelancer-info-grid {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .info-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+    }
+    .info-row-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .info-row-value {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .wallet-mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--accent-indigo);
+      word-break: break-all;
+    }
+    .info-mini-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .info-mini-card {
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+    }
+    .skills-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .skill-tag {
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      background: rgba(129, 140, 248, 0.1);
+      border: 1px solid rgba(129, 140, 248, 0.15);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent-indigo);
+    }
+
+    /* ── Funding Card ── */
+    .funding-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-2xl);
+      box-shadow: var(--shadow-glow), var(--shadow-card);
+      overflow: hidden;
+      margin-top: 20px;
+    }
+    .funding-header {
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .funding-icon {
+      width: 44px; height: 44px;
+      border-radius: var(--radius-md);
+      background: var(--gradient-fund);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 0 20px rgba(129, 140, 248, 0.3);
+    }
+    .funding-body { padding: 24px; }
+
+    /* ── Form Elements ── */
+    .form-group { margin-bottom: 20px; }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-medium);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .form-input:focus {
+      border-color: var(--accent-indigo);
+      box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
+    }
+    .form-input[readonly] {
+      background: rgba(255, 255, 255, 0.01);
+      cursor: default;
+    }
+    .form-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+    .eth-input-wrap {
+      position: relative;
+    }
+    .eth-input-wrap .eth-symbol {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--accent-indigo);
+    }
+    .eth-input-wrap .form-input {
+      padding-left: 38px;
+    }
+
+    /* ── Wallet Panel ── */
+    .wallet-panel {
+      margin-top: 20px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .wallet-disconnected-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .wallet-disconnected-sub {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 6px;
+      line-height: 1.6;
+    }
+    .wallet-connected-box {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      background: rgba(52, 211, 153, 0.06);
+      border: 1px solid rgba(52, 211, 153, 0.15);
+    }
+    .wallet-address {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--accent-emerald);
+      margin-top: 4px;
+      word-break: break-all;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: var(--radius-full);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      text-decoration: none;
+    }
+    .btn .material-symbols-outlined { font-size: 18px; }
+    .btn-primary {
+      background: var(--gradient-primary);
+      color: white;
+      box-shadow: 0 4px 16px rgba(129, 140, 248, 0.3);
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(129, 140, 248, 0.4);
+    }
+    .btn-fund {
+      width: 100%;
+      padding: 18px 24px;
+      font-size: 15px;
+      border-radius: var(--radius-xl);
+      background: var(--gradient-fund);
+      color: white;
+      box-shadow: 0 4px 20px rgba(129, 140, 248, 0.3);
+      margin-top: 20px;
+    }
+    .btn-fund:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(129, 140, 248, 0.45);
+    }
+    .btn-fund:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border-medium);
+      color: var(--text-secondary);
+    }
+    .btn-outline:hover {
+      border-color: var(--accent-indigo);
+      color: var(--accent-indigo);
+      background: rgba(129, 140, 248, 0.06);
+    }
+    .btn-success {
+      background: var(--gradient-success);
+      color: white;
+      box-shadow: 0 4px 16px rgba(52, 211, 153, 0.3);
+    }
+    .btn-success:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(52, 211, 153, 0.4);
+    }
+    .btn-dark {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-medium);
+      color: var(--text-primary);
+    }
+    .btn-dark:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--border-medium);
+    }
+
+    /* ── Transaction Status ── */
+    .tx-status-wrap { margin-top: 20px; }
+
+    .tx-alert {
+      padding: 16px 20px;
+      border-radius: var(--radius-lg);
+      font-size: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .tx-alert-pending {
+      background: rgba(251, 191, 36, 0.08);
+      border: 1px solid rgba(251, 191, 36, 0.2);
+      color: var(--accent-amber);
+    }
+    .tx-alert-success {
+      background: rgba(52, 211, 153, 0.08);
+      border: 1px solid rgba(52, 211, 153, 0.2);
+      color: var(--accent-emerald);
+    }
+    .tx-alert-error {
+      background: rgba(251, 113, 133, 0.08);
+      border: 1px solid rgba(251, 113, 133, 0.2);
+      color: var(--accent-rose);
+    }
+    .tx-alert-icon { flex-shrink: 0; margin-top: 1px; }
+    .tx-alert-text { flex: 1; }
+    .tx-alert-text strong { display: block; font-weight: 700; margin-bottom: 4px; }
+    .tx-alert-text p { font-size: 13px; opacity: 0.85; line-height: 1.5; }
+    .tx-alert-text a {
+      color: inherit;
+      font-weight: 700;
+      text-decoration: underline;
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tx-post-actions {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* ── Warning Banner ── */
+    .warning-banner {
+      padding: 14px 18px;
+      border-radius: var(--radius-lg);
+      background: rgba(251, 191, 36, 0.08);
+      border: 1px solid rgba(251, 191, 36, 0.2);
+      color: var(--accent-amber);
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .wrong-network-banner {
+      padding: 14px 18px;
+      border-radius: var(--radius-lg);
+      background: rgba(251, 113, 133, 0.08);
+      border: 1px solid rgba(251, 113, 133, 0.2);
+      color: var(--accent-rose);
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .wrong-network-banner button {
+      background: none;
+      border: none;
+      color: var(--accent-rose);
+      font-weight: 800;
+      text-decoration: underline;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: inherit;
+    }
+
+    /* ── Success Celebration ── */
+    .success-celebration {
+      text-align: center;
+      padding: 28px 20px;
+      background: rgba(52, 211, 153, 0.04);
+      border: 1px solid rgba(52, 211, 153, 0.15);
+      border-radius: var(--radius-xl);
+      margin-bottom: 16px;
+    }
+    .success-celebration .material-symbols-outlined {
+      font-size: 56px;
+      color: var(--accent-emerald);
+      margin-bottom: 12px;
+    }
+    .success-celebration h3 {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--accent-emerald);
+    }
+    .success-celebration p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 6px;
+    }
+
+    /* ── Spinner ── */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Loading State ── */
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 120px 24px;
+      text-align: center;
+    }
+    .loading-spinner-ring {
+      width: 52px; height: 52px;
+      border: 3px solid rgba(129, 140, 248, 0.15);
+      border-top-color: var(--accent-indigo);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 24px;
+    }
+    .loading-state h2 {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+    .loading-state p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      max-width: 360px;
+    }
+
+    /* ── Error State ── */
+    .error-state {
+      max-width: 520px;
+      margin: 100px auto;
+      text-align: center;
+      padding: 40px;
+      background: var(--bg-card);
+      border: 1px solid rgba(251, 113, 133, 0.15);
+      border-radius: var(--radius-2xl);
+    }
+    .error-icon-wrap {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: rgba(251, 113, 133, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+    .error-icon-wrap .material-symbols-outlined {
+      font-size: 28px;
+      color: var(--accent-rose);
+    }
+    .error-state h2 {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+    .error-state p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+    .error-state .btn { margin-top: 24px; }
+
+    /* ── Trust / Security indicator ── */
+    .security-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      background: rgba(52, 211, 153, 0.06);
+      border: 1px solid rgba(52, 211, 153, 0.12);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent-emerald);
+      letter-spacing: 0.05em;
+    }
+    .security-badge .material-symbols-outlined { font-size: 14px; }
+
+    /* ── Confetti Canvas ── */
+    #confettiCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ── Network Badge ── */
+    .network-badge {
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .network-badge.sepolia {
+      background: rgba(52, 211, 153, 0.12);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(52, 211, 153, 0.2);
+    }
+    .network-badge.wrong {
+      background: rgba(251, 113, 133, 0.12);
+      color: var(--accent-rose);
+      border: 1px solid rgba(251, 113, 133, 0.2);
+    }
+
+    /* ── Utility ── */
+    .hidden { display: none !important; }
+    .mt-0 { margin-top: 0; }
+    .text-center { text-align: center; }
+  </style>
+</head>
+<body>
+
+<!-- Ambient Background -->
+<div class="ambient-bg">
+  <div class="ambient-orb"></div>
+  <div class="ambient-orb"></div>
+  <div class="ambient-orb"></div>
+</div>
+
+<!-- Confetti Canvas -->
+<canvas id="confettiCanvas"></canvas>
+
+<!-- Top Navigation -->
+<nav class="top-nav" id="topNav">
+  <div class="nav-inner">
+    <a href="/" class="nav-brand">
+      <div class="nav-logo">
+        <span class="material-symbols-outlined">shield_lock</span>
+      </div>
+      <span class="nav-title">TechTaskSoln</span>
+    </a>
+    <div class="nav-links">
+      <a href="/client/dashboard/">Dashboard</a>
+      <a href="/client/projects/">Projects</a>
+      <a href="/client/proposals/" class="active">Proposals</a>
+      <button class="nav-logout" onclick="logout()" title="Logout">
+        <span class="material-symbols-outlined" style="font-size:18px;">logout</span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- Loading State -->
+<div class="page-container" id="loadingState">
+  <div class="loading-state">
+    <div class="loading-spinner-ring"></div>
+    <h2>Loading escrow details</h2>
+    <p>Preparing proposal, wallet information, and escrow status for this project.</p>
+  </div>
+</div>
+
+<!-- Error State -->
+<div class="page-container hidden" id="errorState">
+  <div class="error-state">
+    <div class="error-icon-wrap">
+      <span class="material-symbols-outlined">error</span>
+    </div>
+    <h2>Unable to open funding flow</h2>
+    <p id="errorMessage">This accepted proposal could not be loaded.</p>
+    <a href="/client/proposals/" class="btn btn-primary">
+      <span class="material-symbols-outlined">arrow_back</span>
+      Back to proposals
+    </a>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="page-container hidden" id="mainContent">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="/client/dashboard/">Dashboard</a>
+    <span class="material-symbols-outlined">chevron_right</span>
+    <a href="/client/proposals/">Proposals</a>
+    <span class="material-symbols-outlined">chevron_right</span>
+    <span class="current">Fund Escrow</span>
+  </div>
+
+  <!-- Progress Stepper -->
+  <div class="stepper" id="progressStepper">
+    <div class="stepper-step completed" id="step1">
+      <div class="stepper-dot">
+        <span class="material-symbols-outlined" style="font-size:18px;">check</span>
+      </div>
+      <div class="stepper-label">Proposal<br>Accepted</div>
+      <div class="stepper-line"></div>
+    </div>
+    <div class="stepper-step active" id="step2">
+      <div class="stepper-dot">
+        <span class="material-symbols-outlined" style="font-size:18px;">lock</span>
+      </div>
+      <div class="stepper-label">Fund<br>Escrow</div>
+      <div class="stepper-line"></div>
+    </div>
+    <div class="stepper-step pending" id="step3">
+      <div class="stepper-dot">3</div>
+      <div class="stepper-label">Project<br>In Progress</div>
+    </div>
+  </div>
+
+  <!-- Two Column Layout -->
+  <div class="two-col">
+
+    <!-- LEFT COLUMN -->
+    <div>
+      <!-- Main Escrow Card -->
+      <div class="card">
+        <div class="card-body">
+          <div class="card-header-flex">
+            <div>
+              <p class="section-label">Accepted Proposal</p>
+              <h1 class="section-title">Fund project escrow</h1>
+              <p class="section-desc">
+                Lock the agreed amount in a secure smart contract. Funds stay protected until you approve the freelancer's delivery.
+              </p>
+            </div>
+            <div id="escrowStateBadge" class="badge badge-warning">
+              <span class="material-symbols-outlined" style="font-size:14px;">hourglass_top</span>
+              Awaiting Funding
+            </div>
+          </div>
+
+          <!-- Stat Cards -->
+          <div class="stat-grid">
+            <div class="stat-card">
+              <p class="stat-label">Project</p>
+              <p class="stat-value" id="projectTitle">—</p>
+              <p class="stat-sub">Delivery in <span id="deliveryTime">—</span></p>
+            </div>
+            <div class="stat-card">
+              <p class="stat-label">Agreed Amount</p>
+              <p class="stat-value" id="bidAmount">—</p>
+              <p class="stat-sub">Budget <span id="projectBudget">—</span></p>
+            </div>
+            <div class="stat-card">
+              <p class="stat-label">Freelancer</p>
+              <p class="stat-value" id="freelancerName">—</p>
+              <a href="#" id="viewProfileLink" class="stat-sub" style="color:var(--accent-indigo);text-decoration:none;font-weight:600;">
+                View profile →
+              </a>
+            </div>
+          </div>
+
+          <!-- Checklist -->
+          <div class="checklist-panel">
+            <div class="checklist-header">
+              <div>
+                <p class="section-label">Escrow Checklist</p>
+                <h2 style="font-size:16px;font-weight:800;margin-top:4px;color:var(--text-primary);">Before the freelancer starts</h2>
+              </div>
+              <div class="security-badge">
+                <span class="material-symbols-outlined">verified_user</span>
+                Sepolia Smart Contract
+              </div>
+            </div>
+            <div class="checklist-grid">
+              <div class="checklist-item">
+                <h4>1. Verify wallet</h4>
+                <p>Confirm the freelancer's ETH wallet address is correct before sending funds.</p>
+              </div>
+              <div class="checklist-item">
+                <h4>2. Connect MetaMask</h4>
+                <p>Use a Sepolia-connected wallet so your funding transaction reaches the escrow contract.</p>
+              </div>
+              <div class="checklist-item">
+                <h4>3. Fund escrow</h4>
+                <p>Once funded, the project is protected until you release the payment upon delivery.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Proposal Summary -->
+          <div class="proposal-summary">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+              <div>
+                <p class="section-label">Proposal Summary</p>
+                <h2 style="font-size:16px;font-weight:800;margin-top:4px;color:var(--text-primary);">Why you're funding this freelancer</h2>
+              </div>
+              <span id="proposalSubmittedAt" style="font-size:12px;color:var(--text-muted);font-weight:600;">—</span>
+            </div>
+            <p class="proposal-text" id="coverLetter">—</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div>
+      <!-- Freelancer Card -->
+      <div class="freelancer-card">
+        <div class="freelancer-header">
+          <div class="avatar" id="freelancerAvatar">—</div>
+          <div>
+            <p style="font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);">Assigned Freelancer</p>
+            <p class="freelancer-name" id="sidebarFreelancerName">—</p>
+          </div>
+        </div>
+        <div class="freelancer-info-grid">
+          <div class="info-row">
+            <span class="info-row-label">Wallet</span>
+            <span id="walletStatusPill" class="badge badge-warning" style="padding:4px 10px;">Missing</span>
+          </div>
+          <div style="padding:12px 16px;background:rgba(255,255,255,0.02);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);">
+            <p class="info-row-label" style="margin-bottom:6px;">Freelancer ETH Address <span style="opacity:0.7;font-weight:500;text-transform:none;letter-spacing:0;">(paid from smart contract)</span></p>
+            <p class="wallet-mono" id="freelancerWallet">—</p>
+          </div>
+          <div class="info-mini-grid">
+            <div class="info-mini-card">
+              <p class="info-row-label">Rating</p>
+              <p class="info-row-value" id="freelancerRating" style="margin-top:6px;">—</p>
+            </div>
+            <div class="info-mini-card">
+              <p class="info-row-label">Completed</p>
+              <p class="info-row-value" id="freelancerCompleted" style="margin-top:6px;">—</p>
+            </div>
+          </div>
+          <div style="padding:14px 16px;background:rgba(255,255,255,0.02);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);">
+            <p class="info-row-label" style="margin-bottom:8px;">Skills</p>
+            <div class="skills-wrap" id="skillsList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Funding Card -->
+      <div class="funding-card">
+        <div class="funding-header">
+          <div class="funding-icon">
+            <span class="material-symbols-outlined" style="font-size:22px;">payments</span>
+          </div>
+          <div>
+            <p style="font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);">Funding Form</p>
+            <h2 style="font-size:16px;font-weight:800;color:var(--text-primary);margin-top:2px;">Send Funds to Escrow</h2>
+          </div>
+        </div>
+        <div class="funding-body">
+
+          <!-- Warning Banner -->
+          <div id="warningBanner" class="warning-banner hidden">
+            <span class="material-symbols-outlined" style="font-size:18px;">warning</span>
+            <span id="warningText"></span>
+          </div>
+
+          <!-- Contract Address -->
+          <div class="form-group">
+            <label for="contractAddressInput" class="form-label">Smart Contract Address</label>
+            <input id="contractAddressInput" type="text" class="form-input" readonly />
+            <p class="form-hint">Auto-populated from TechTaskSoln Sepolia contract.</p>
+          </div>
+
+          <!-- ETH Amount -->
+          <div class="form-group">
+            <label for="ethAmountInput" class="form-label">Amount to Fund (ETH)</label>
+            <div class="eth-input-wrap">
+              <span class="eth-symbol">Ξ</span>
+              <input id="ethAmountInput" type="number" min="0.0001" step="0.0001" class="form-input" />
+            </div>
+            <p class="form-hint">Defaults to the accepted bid amount in the escrow record.</p>
+          </div>
+
+          <!-- Step A: Connect Wallet -->
+          <div class="wallet-panel" id="walletPanel">
+            <div id="walletDisconnected">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                <span class="material-symbols-outlined" style="font-size:22px;color:var(--accent-indigo);">account_balance_wallet</span>
+                <p class="wallet-disconnected-text">Step 1 — Connect Your Wallet</p>
+              </div>
+              <p class="wallet-disconnected-sub">You must connect MetaMask each time before funding. This ensures the correct wallet authorises the transaction.</p>
+              <button id="connectWalletBtn" onclick="connectWallet()" class="btn btn-primary" style="margin-top:16px;width:100%;">
+                <span class="material-symbols-outlined">account_balance_wallet</span>
+                Connect MetaMask
+              </button>
+            </div>
+
+            <div id="walletConnected" class="hidden">
+              <div class="wallet-connected-box">
+                <div style="flex:1;">
+                  <p style="font-size:13px;font-weight:700;color:var(--accent-emerald);display:flex;align-items:center;gap:6px;">
+                    <span class="material-symbols-outlined" style="font-size:16px;">check_circle</span>
+                    Wallet Connected
+                  </p>
+                  <p class="wallet-address" id="connectedAddress">—</p>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                  <span id="networkBadge" class="network-badge wrong">Unknown</span>
+                  <button onclick="disconnectWallet()" style="background:none;border:none;color:var(--text-muted);font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;font-family:inherit;">Disconnect</button>
+                </div>
+              </div>
+              <div id="wrongNetwork" class="wrong-network-banner hidden">
+                <span class="material-symbols-outlined" style="font-size:16px;">error</span>
+                Sepolia network required.
+                <button onclick="switchToSepolia()">Switch network</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step B: Fund Escrow — only enabled after wallet is connected -->
+          <div id="fundBtnWrap" style="margin-top:20px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+              <span class="material-symbols-outlined" style="font-size:22px;color:var(--text-muted);" id="step2Icon">lock</span>
+              <p style="font-size:14px;font-weight:700;color:var(--text-muted);" id="step2Label">Step 2 — Fund Escrow <span style="font-weight:500;opacity:0.7;">(connect wallet first)</span></p>
+            </div>
+            <button id="fundBtn" onclick="fundEscrow()" class="btn btn-fund" disabled>
+              <span class="material-symbols-outlined">lock</span>
+              Fund Escrow
+            </button>
+          </div>
+
+          <!-- Transaction Status -->
+          <div id="txStatus" class="tx-status-wrap hidden">
+            <!-- Pending -->
+            <div id="txPending" class="tx-alert tx-alert-pending hidden">
+              <div class="tx-alert-icon"><div class="spinner"></div></div>
+              <div class="tx-alert-text">
+                <strong>Transaction Processing</strong>
+                <p id="txPendingMsg">Waiting for wallet confirmation and network processing.</p>
+              </div>
+            </div>
+
+            <!-- Success -->
+            <div id="txSuccess" class="tx-alert tx-alert-success hidden">
+              <div class="tx-alert-icon">
+                <span class="material-symbols-outlined" style="font-size:22px;">check_circle</span>
+              </div>
+              <div class="tx-alert-text">
+                <strong>Transaction Complete. Funds Locked in Smart Contract.</strong>
+                <p>Your ETH is now securely held in the escrow smart contract. The freelancer has been notified and the project is ready for work.</p>
+                <a id="txLink" href="#" target="_blank">
+                  <span class="material-symbols-outlined" style="font-size:14px;">open_in_new</span>
+                  View on Etherscan
+                </a>
+              </div>
+            </div>
+
+            <!-- Error -->
+            <div id="txError" class="tx-alert tx-alert-error hidden">
+              <div class="tx-alert-icon">
+                <span class="material-symbols-outlined" style="font-size:22px;">cancel</span>
+              </div>
+              <div class="tx-alert-text">
+                <strong>Funding Failed</strong>
+                <p id="txErrorMsg">Please try again.</p>
+              </div>
+            </div>
+
+            <!-- Post-Fund Actions -->
+            <div id="postFundActions" class="hidden">
+              <div class="success-celebration">
+                <span class="material-symbols-outlined">verified</span>
+                <h3>Transaction Complete!</h3>
+                <p>Funds are locked in the smart contract. The freelancer has been notified and can now start working.</p>
+              </div>
+              <div class="tx-post-actions">
+                <a id="msgFreelancerBtn" href="/chat/" class="btn btn-dark">
+                  <span class="material-symbols-outlined">chat</span>
+                  Message Freelancer
+                </a>
+                <a id="goWorkspaceBtn" href="/client/projects/" class="btn btn-success">
+                  <span class="material-symbols-outlined">dashboard</span>
+                  Go to Workspace
+                </a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script>
+/* ── Auth Guard ── */
+if (!isLoggedIn()) window.location.href = '/login/';
+
+/* ── Globals ── */
+const pathParts = window.location.pathname.split('/').filter(Boolean);
+const proposalId = pathParts[pathParts.length - 1];
+const sepoliaChainId = '0xaa36a7';
+const SEPOLIA_CHAIN_ID_BIGINT = 11155111n;
+const CONTRACT_ADDRESS = '0x299823DD8cE0003F88383E2e75bBc34e426C5435';
+
+/* Full ABI for the fundEscrow + getEscrow functions */
+const CONTRACT_ABI = [
+  'function fundEscrow(string memory projectId, address freelancer) external payable',
+  'function getEscrow(string memory projectId) external view returns (address client, address freelancer, uint256 amount, uint8 status, uint256 createdAt)'
+];
+
+let fundingContext = null;
+let connectedWallet = '';
+
+/* ══════════════════════════════════════════════════════════
+   Auth-aware fetch — refreshes JWT if expired
+   ══════════════════════════════════════════════════════════ */
+async function authFetch(url, options = {}) {
+  let token = localStorage.getItem('access_token');
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {}),
+    'Authorization': 'Bearer ' + token,
+  };
+
+  let response = await fetch(url, { ...options, headers });
+
+  // If 401 — try refreshing the token once
+  if (response.status === 401) {
+    const refresh = localStorage.getItem('refresh_token');
+    if (refresh) {
+      try {
+        const refreshRes = await fetch('/api/auth/refresh/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh }),
+        });
+        if (refreshRes.ok) {
+          const data = await refreshRes.json();
+          localStorage.setItem('access_token', data.access);
+          if (data.refresh) localStorage.setItem('refresh_token', data.refresh);
+          headers['Authorization'] = 'Bearer ' + data.access;
+          response = await fetch(url, { ...options, headers });
+        } else {
+          // Refresh failed — redirect to login
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          window.location.href = '/login/';
+          return null;
+        }
+      } catch {
+        window.location.href = '/login/';
+        return null;
+      }
+    } else {
+      window.location.href = '/login/';
+      return null;
+    }
+  }
+  return response;
+}
+
+/* ── Helpers ── */
+function setError(message) {
+  document.getElementById('loadingState').classList.add('hidden');
+  document.getElementById('mainContent').classList.add('hidden');
+  document.getElementById('errorMessage').textContent = message;
+  document.getElementById('errorState').classList.remove('hidden');
+}
+
+function setWarning(message) {
+  const banner = document.getElementById('warningBanner');
+  const text = document.getElementById('warningText');
+  if (!message) {
+    banner.classList.add('hidden');
+    text.textContent = '';
+    return;
+  }
+  text.textContent = message;
+  banner.classList.remove('hidden');
+}
+
+function formatEth(amount) {
+  return Number(amount || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 4, maximumFractionDigits: 8
+  }) + ' ETH';
+}
+
+function formatCurrency(amount) {
+  return '$' + Number(amount || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2, maximumFractionDigits: 2
+  });
+}
+
+function shortWallet(address) {
+  if (!address) return 'Not provided';
+  return address.slice(0, 8) + '…' + address.slice(-6);
+}
+
+function getFreelancerFullName(profile, fallback) {
+  if (!profile) return fallback || 'Freelancer';
+  const name = [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim();
+  return name || profile.username || fallback || 'Freelancer';
+}
+
+/* ── Render Funding Details ── */
+function renderFundingDetails(context) {
+  const proposal = context.proposal;
+  const escrow = context.escrow;
+  const profile = proposal.freelancer_profile || null;
+  const fullName = getFreelancerFullName(profile, proposal.freelancer_username);
+  const initials = fullName.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase() || 'FL';
+  const wallet = escrow?.freelancer_wallet || profile?.eth_wallet_address || '';
+
+  // --- Populate Fields ---
+  document.getElementById('projectTitle').textContent = proposal.project_title;
+  document.getElementById('deliveryTime').textContent = `${proposal.delivery_time} days`;
+  document.getElementById('bidAmount').textContent = formatEth(escrow?.amount_eth || proposal.bid_amount);
+  document.getElementById('projectBudget').textContent = formatCurrency(proposal.project_budget);
+  document.getElementById('freelancerName').textContent = fullName;
+  document.getElementById('sidebarFreelancerName').textContent = fullName;
+  document.getElementById('freelancerAvatar').textContent = initials;
+  document.getElementById('proposalSubmittedAt').textContent = `Submitted ${new Date(proposal.created_at).toLocaleDateString()}`;
+  document.getElementById('coverLetter').textContent = proposal.cover_letter || 'No cover letter was provided.';
+
+  // Inputs
+  document.getElementById('ethAmountInput').value = Number(escrow?.amount_eth || proposal.bid_amount || 0).toFixed(4);
+  document.getElementById('contractAddressInput').value = CONTRACT_ADDRESS;
+
+  // Freelancer wallet
+  document.getElementById('freelancerWallet').textContent = wallet || 'No wallet address on file';
+  const walletPill = document.getElementById('walletStatusPill');
+  if (wallet) {
+    walletPill.textContent = 'Ready';
+    walletPill.className = 'badge badge-success';
+    walletPill.style.padding = '4px 10px';
+  } else {
+    walletPill.textContent = 'Missing';
+    walletPill.className = 'badge badge-warning';
+    walletPill.style.padding = '4px 10px';
+  }
+
+  // Freelancer stats
+  document.getElementById('freelancerRating').textContent = profile
+    ? `${Number(profile.rating || 0).toFixed(1)} / 5`
+    : 'No rating';
+  document.getElementById('freelancerCompleted').textContent = profile
+    ? `${profile.completed_projects ?? 0} projects`
+    : '0 projects';
+
+  // Skills
+  const skillsList = document.getElementById('skillsList');
+  const skills = profile?.skills
+    ? profile.skills.split(',').map(s => s.trim()).filter(Boolean)
+    : [];
+  skillsList.innerHTML = skills.length
+    ? skills.slice(0, 6).map(s => `<span class="skill-tag">${s}</span>`).join('')
+    : '<span style="font-size:12px;color:var(--text-muted);">No skills listed</span>';
+
+  // Profile link
+  const profileLink = profile?.id ? `/freelancer/profile/${profile.id}/` : '#';
+  document.getElementById('viewProfileLink').href = profileLink;
+
+  // Escrow status badge
+  const escrowBadge = document.getElementById('escrowStateBadge');
+  const status = escrow?.status || 'EMPTY';
+  if (status === 'FUNDED') {
+    escrowBadge.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px;">check_circle</span> Funded';
+    escrowBadge.className = 'badge badge-success';
+  }
+
+  // Warning if no wallet
+  if (!wallet) {
+    setWarning('This freelancer has no ETH wallet on their profile. Ask them to update their wallet before funding escrow.');
+  } else {
+    setWarning('');
+  }
+
+  // Already funded state
+  if (status === 'FUNDED' && escrow?.tx_hash_funded) {
+    document.getElementById('txStatus').classList.remove('hidden');
+    document.getElementById('txSuccess').classList.remove('hidden');
+    document.getElementById('txLink').href = `https://sepolia.etherscan.io/tx/${escrow.tx_hash_funded}`;
+    const fundBtn = document.getElementById('fundBtn');
+    fundBtn.disabled = true;
+    fundBtn.innerHTML = '<span class="material-symbols-outlined">verified</span> Funds Locked in Smart Contract';
+    // Update Step 2 label to show funded state
+    const step2Icon = document.getElementById('step2Icon');
+    const step2Label = document.getElementById('step2Label');
+    if (step2Icon) step2Icon.style.color = 'var(--accent-emerald)';
+    if (step2Label) {
+      step2Label.style.color = 'var(--accent-emerald)';
+      step2Label.innerHTML = 'Step 2 — Fund Escrow <span style="font-weight:500;">(completed ✓)</span>';
+    }
+    // Hide the wallet connect section — not needed if already funded
+    document.getElementById('walletPanel').style.display = 'none';
+    updateStepperToFunded(escrow.project);
+    showPostFundActions(escrow.project);
+  }
+}
+
+/* ── Load Funding Context (with token refresh) ── */
+async function loadFundingContext() {
+  try {
+    const response = await authFetch(`/api/proposals/${proposalId}/funding-context/`);
+    if (!response) return; // redirected to login
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || data.detail || 'Failed to load the accepted proposal.');
+    }
+
+    fundingContext = data;
+    if (!data.proposal) throw new Error('Proposal details were not returned.');
+    if (!data.escrow) throw new Error('Escrow record not found. Please reopen the proposal acceptance flow and try again.');
+    if (data.proposal.status !== 'ACCEPTED') throw new Error('This proposal has not been accepted yet.');
+
+    renderFundingDetails(data);
+    document.getElementById('loadingState').classList.add('hidden');
+    document.getElementById('mainContent').classList.remove('hidden');
+
+    // DO NOT auto-detect wallet — force manual connect every time
+    // Wallet starts disconnected, Fund Escrow button stays disabled
+    connectedWallet = '';
+    updateWalletUi('', null);
+  } catch (error) {
+    setError(error.message || 'Failed to load funding context.');
+  }
+}
+
+/* ── Wallet UI ── */
+function updateWalletUi(address, chainId) {
+  const walletConnected = document.getElementById('walletConnected');
+  const walletDisconnected = document.getElementById('walletDisconnected');
+  const wrongNetwork = document.getElementById('wrongNetwork');
+  const networkBadge = document.getElementById('networkBadge');
+  const fundBtn = document.getElementById('fundBtn');
+  const step2Icon = document.getElementById('step2Icon');
+  const step2Label = document.getElementById('step2Label');
+  const walletReady = Boolean(fundingContext?.escrow?.freelancer_wallet);
+  const escrowStatus = fundingContext?.escrow?.status;
+
+  if (!address) {
+    walletConnected.classList.add('hidden');
+    walletDisconnected.classList.remove('hidden');
+    // Keep fund button visible but disabled
+    fundBtn.disabled = true;
+    step2Icon.style.color = 'var(--text-muted)';
+    step2Label.style.color = 'var(--text-muted)';
+    step2Label.innerHTML = 'Step 2 — Fund Escrow <span style="font-weight:500;opacity:0.7;">(connect wallet first)</span>';
+    return;
+  }
+
+  walletDisconnected.classList.add('hidden');
+  walletConnected.classList.remove('hidden');
+  document.getElementById('connectedAddress').textContent = address;
+
+  const onSepolia = chainId === sepoliaChainId;
+  networkBadge.textContent = onSepolia ? 'Sepolia' : 'Wrong Network';
+  networkBadge.className = onSepolia ? 'network-badge sepolia' : 'network-badge wrong';
+
+  wrongNetwork.classList.toggle('hidden', onSepolia);
+
+  // Enable Fund Escrow button only when wallet is connected + on Sepolia + freelancer wallet exists + not already funded
+  const canFund = onSepolia && walletReady && escrowStatus !== 'FUNDED';
+  fundBtn.disabled = !canFund;
+
+  if (canFund) {
+    step2Icon.style.color = 'var(--accent-emerald)';
+    step2Label.style.color = 'var(--text-primary)';
+    step2Label.innerHTML = 'Step 2 — Fund Escrow <span style="font-weight:500;color:var(--accent-emerald);">(ready)</span>';
+  } else if (escrowStatus === 'FUNDED') {
+    step2Icon.style.color = 'var(--accent-emerald)';
+    step2Label.style.color = 'var(--accent-emerald)';
+    step2Label.innerHTML = 'Step 2 — Fund Escrow <span style="font-weight:500;">(already funded)</span>';
+  } else {
+    step2Icon.style.color = 'var(--accent-amber)';
+    step2Label.style.color = 'var(--text-secondary)';
+    step2Label.innerHTML = 'Step 2 — Fund Escrow <span style="font-weight:500;opacity:0.7;">(fix issues above)</span>';
+  }
+}
+
+/* ── Connect Wallet (forced fresh connection every time) ── */
+async function connectWallet() {
+  if (!window.ethereum) {
+    setWarning('MetaMask browser extension is required to fund escrow. Please install MetaMask and reload this page.');
+    return;
+  }
+
+  const button = document.getElementById('connectWalletBtn');
+  button.disabled = true;
+  button.innerHTML = '<div class="spinner"></div> Connecting to MetaMask…';
+  setWarning('');
+
+  try {
+    // Always request accounts — this opens the MetaMask popup for user authorization
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    if (!accounts || accounts.length === 0) {
+      throw new Error('No accounts returned from MetaMask. Please unlock your wallet and try again.');
+    }
+    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+    connectedWallet = accounts[0];
+    updateWalletUi(connectedWallet, chainId);
+  } catch (error) {
+    if (error.code === 4001) {
+      setWarning('MetaMask connection was cancelled. You must connect your wallet to proceed.');
+    } else {
+      setWarning(error.message || 'Wallet connection failed. Please try again.');
+    }
+  } finally {
+    button.disabled = false;
+    button.innerHTML = '<span class="material-symbols-outlined">account_balance_wallet</span> Connect MetaMask';
+  }
+}
+
+/* ── Disconnect Wallet (reset to initial state) ── */
+function disconnectWallet() {
+  connectedWallet = '';
+  updateWalletUi('', null);
+}
+
+/* ── Switch to Sepolia ── */
+async function switchToSepolia() {
+  if (!window.ethereum) return;
+  try {
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: sepoliaChainId }]
+    });
+  } catch (error) {
+    if (error.code === 4902) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: sepoliaChainId,
+            chainName: 'Sepolia Testnet',
+            rpcUrls: ['https://rpc.sepolia.org'],
+            nativeCurrency: { name: 'SepoliaETH', symbol: 'ETH', decimals: 18 },
+            blockExplorerUrls: ['https://sepolia.etherscan.io']
+          }]
+        });
+      } catch (addErr) {
+        setWarning('Could not add Sepolia network to MetaMask: ' + (addErr.message || 'Unknown error'));
+      }
+    } else {
+      setWarning(error.message || 'Unable to switch network.');
+    }
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   FUND ESCROW — Main Transaction Flow
+   ══════════════════════════════════════════════════════════════ */
+async function fundEscrow() {
+  if (!fundingContext?.escrow) {
+    setWarning('Escrow data is not available.');
+    return;
+  }
+
+  const contractAddress = document.getElementById('contractAddressInput').value.trim();
+  const ethAmountStr = document.getElementById('ethAmountInput').value.trim();
+  const ethAmount = parseFloat(ethAmountStr);
+
+  // ── Input Validation ────────────────────────────────────────────
+  if (!contractAddress || !contractAddress.startsWith('0x') || contractAddress.length < 10) {
+    setWarning('Enter a valid Sepolia contract address.');
+    return;
+  }
+  if (!ethAmountStr || !ethAmount || ethAmount <= 0) {
+    setWarning('Enter a valid ETH amount to fund.');
+    return;
+  }
+  if (!fundingContext.escrow.freelancer_wallet) {
+    setWarning('Freelancer wallet is missing. Ask the freelancer to update their profile wallet address first.');
+    return;
+  }
+  if (!window.ethereum) {
+    setWarning('MetaMask is required to send the funding transaction.');
+    return;
+  }
+
+  setWarning('');
+
+  const fundBtn = document.getElementById('fundBtn');
+  const txPendingEl = document.getElementById('txPending');
+  const txPendingMsg = document.getElementById('txPendingMsg');
+
+  fundBtn.disabled = true;
+  fundBtn.innerHTML = '<div class="spinner"></div> Preparing transaction…';
+  document.getElementById('txStatus').classList.remove('hidden');
+  txPendingEl.classList.remove('hidden');
+  document.getElementById('txSuccess').classList.add('hidden');
+  document.getElementById('txError').classList.add('hidden');
+
+  try {
+    // ── Step 1: Verify wallet connection and network ────────────────
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const fromAddress = await signer.getAddress();
+
+    if (!fromAddress) throw new Error('Connect MetaMask before funding escrow.');
+
+    const network = await provider.getNetwork();
+    if (network.chainId !== SEPOLIA_CHAIN_ID_BIGINT) {
+      throw new Error('Switch MetaMask to Sepolia testnet before funding. Current chain: ' + network.chainId);
+    }
+
+    // ── Step 2: Checksum the freelancer wallet address ──────────────
+    let freelancerWallet;
+    try {
+      freelancerWallet = ethers.getAddress(fundingContext.escrow.freelancer_wallet);
+    } catch (addrErr) {
+      throw new Error('Invalid freelancer wallet address: ' + fundingContext.escrow.freelancer_wallet + '. Ask the freelancer to correct their ETH wallet.');
+    }
+
+    // ── Step 3: Prepare contract and project ID ────────────────────
+    const amountWei = ethers.parseEther(ethAmountStr);
+    const contract = new ethers.Contract(contractAddress, CONTRACT_ABI, signer);
+    const projectIdStr = String(fundingContext.escrow.project);
+
+    console.log('[FundEscrow] Project ID:', projectIdStr);
+    console.log('[FundEscrow] Freelancer wallet:', freelancerWallet);
+    console.log('[FundEscrow] Amount (ETH):', ethAmountStr);
+    console.log('[FundEscrow] Amount (Wei):', amountWei.toString());
+    console.log('[FundEscrow] Contract:', contractAddress);
+    console.log('[FundEscrow] Client wallet:', fromAddress);
+
+    // ── Step 4: Pre-flight check — is escrow already funded on-chain? ─
+    fundBtn.innerHTML = '<div class="spinner"></div> Checking on-chain state…';
+    txPendingMsg.textContent = 'Verifying escrow has not already been funded on-chain…';
+
+    try {
+      const readContract = new ethers.Contract(contractAddress, CONTRACT_ABI, provider);
+      const existing = await readContract.getEscrow(projectIdStr);
+      // existing[0] is the client address — address(0) means no escrow exists yet
+      const emptyAddress = '0x0000000000000000000000000000000000000000';
+      if (existing[0] && existing[0] !== emptyAddress) {
+        throw new Error(
+          'This project already has an escrow on-chain (client: ' +
+          existing[0].slice(0, 8) + '…). Each project can only be funded once. ' +
+          'If this was your previous attempt, the escrow is already secured.'
+        );
+      }
+    } catch (preflightErr) {
+      // If the error is from our own check, re-throw it
+      if (preflightErr.message.includes('already has an escrow')) {
+        throw preflightErr;
+      }
+      // Otherwise, the getEscrow call itself failed (contract not found, etc.)
+      console.warn('[FundEscrow] Pre-flight check failed (non-fatal):', preflightErr.message);
+      // Continue anyway — the fundEscrow call will provide the definitive response
+    }
+
+    // ── Step 5: Send the funding transaction with explicit gas ──────
+    fundBtn.innerHTML = '<div class="spinner"></div> Confirm in MetaMask…';
+    txPendingMsg.textContent = 'Please confirm the transaction in your MetaMask wallet. This sends ' + ethAmountStr + ' ETH to the escrow smart contract.';
+
+    let tx;
+    try {
+      tx = await contract.fundEscrow(projectIdStr, freelancerWallet, {
+        value: amountWei,
+        gasLimit: 300000n,   // Explicit gas limit to avoid estimation failures
+      });
+    } catch (sendErr) {
+      // Parse MetaMask / ethers-specific errors
+      if (sendErr.code === 4001 || sendErr.code === 'ACTION_REJECTED') {
+        throw new Error('Transaction rejected — you cancelled the MetaMask prompt.');
+      }
+      if (sendErr.code === 'INSUFFICIENT_FUNDS' || (sendErr.message && sendErr.message.includes('insufficient funds'))) {
+        throw new Error('Insufficient Sepolia ETH. You need ' + ethAmountStr + ' ETH plus gas fees. Get free Sepolia ETH from a faucet.');
+      }
+      if (sendErr.code === 'CALL_EXCEPTION' || sendErr.code === 'UNPREDICTABLE_GAS_LIMIT') {
+        // Extract the revert reason if available
+        let reason = 'Unknown contract error';
+        if (sendErr.reason) reason = sendErr.reason;
+        else if (sendErr.data?.message) reason = sendErr.data.message;
+        else if (sendErr.message) reason = sendErr.message;
+        throw new Error('Smart contract rejected: ' + reason);
+      }
+      throw sendErr; // Re-throw unrecognized errors
+    }
+
+    const txHash = tx.hash;
+    console.log('[FundEscrow] Transaction hash:', txHash);
+
+    // ── Step 6: Wait for mining confirmation ───────────────────────
+    fundBtn.innerHTML = '<div class="spinner"></div> Mining transaction…';
+    txPendingMsg.textContent = 'Transaction submitted! Hash: ' + txHash.slice(0, 14) + '… Waiting for block confirmation…';
+
+    const receipt = await tx.wait(1);
+    console.log('[FundEscrow] Receipt:', receipt);
+
+    if (receipt.status === 0) {
+      throw new Error('Transaction was mined but REVERTED on-chain (status=0). This usually means the escrow was already funded or the freelancer wallet was invalid.');
+    }
+
+    // ── Step 7: Sync result to Django backend (with retry) ─────────
+    fundBtn.innerHTML = '<div class="spinner"></div> Syncing with platform…';
+    txPendingMsg.textContent = 'Transaction confirmed on-chain! Updating platform records…';
+
+    let syncSuccess = false;
+    let syncData = null;
+    let lastSyncError = null;
+
+    // Retry sync up to 3 times (token might expire during mining)
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const syncResponse = await authFetch(`/api/blockchain/escrow/${fundingContext.escrow.id}/sync_status/`, {
+          method: 'POST',
+          body: JSON.stringify({
+            tx_hash: txHash,
+            tx_type: 'funded',
+            client_wallet: fromAddress,
+          }),
+        });
+
+        if (!syncResponse) {
+          // Redirected to login — but funds are safe
+          txPendingEl.classList.add('hidden');
+          document.getElementById('txSuccess').classList.remove('hidden');
+          document.getElementById('txLink').href = `https://sepolia.etherscan.io/tx/${txHash}`;
+          setWarning('Escrow funded on-chain! You were logged out during sync. Please log back in — your funds are safe.');
+          fundBtn.innerHTML = '<span class="material-symbols-outlined">verified</span> Funded (sync pending)';
+          return;
+        }
+
+        syncData = await syncResponse.json();
+        if (syncResponse.ok) {
+          syncSuccess = true;
+          break;
+        } else {
+          lastSyncError = syncData;
+          console.warn(`[FundEscrow] Sync attempt ${attempt} failed:`, syncData);
+        }
+      } catch (syncErr) {
+        lastSyncError = syncErr;
+        console.warn(`[FundEscrow] Sync attempt ${attempt} error:`, syncErr);
+      }
+
+      // Wait 2 seconds before retrying
+      if (attempt < 3) await new Promise(r => setTimeout(r, 2000));
+    }
+
+    if (!syncSuccess) {
+      console.error('[FundEscrow] All sync attempts failed:', lastSyncError);
+      txPendingEl.classList.add('hidden');
+      document.getElementById('txSuccess').classList.remove('hidden');
+      document.getElementById('txLink').href = `https://sepolia.etherscan.io/tx/${txHash}`;
+      setWarning('Escrow funded on-chain, but platform sync encountered an issue. Your funds are safe on the blockchain. Try refreshing the page.');
+      fundBtn.innerHTML = '<span class="material-symbols-outlined">verified</span> Funded (sync pending)';
+      fundBtn.disabled = true;
+      // Update Step 2 label
+      const s2Icon = document.getElementById('step2Icon');
+      const s2Label = document.getElementById('step2Label');
+      if (s2Icon) s2Icon.style.color = 'var(--accent-emerald)';
+      if (s2Label) {
+        s2Label.style.color = 'var(--accent-emerald)';
+        s2Label.innerHTML = 'Step 2 — Fund Escrow <span style="font-weight:500;">(funded — sync pending)</span>';
+      }
+      return;
+    }
+
+    // ── Step 8: Full success ──────────────────────────────────────
+    fundingContext.escrow = syncData;
+    txPendingEl.classList.add('hidden');
+    document.getElementById('txSuccess').classList.remove('hidden');
+    document.getElementById('txLink').href = `https://sepolia.etherscan.io/tx/${txHash}`;
+
+    const escrowBadge = document.getElementById('escrowStateBadge');
+    escrowBadge.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px;">check_circle</span> Funded';
+    escrowBadge.className = 'badge badge-success';
+
+    fundBtn.innerHTML = '<span class="material-symbols-outlined">verified</span> Funds Locked in Smart Contract';
+    fundBtn.disabled = true;
+
+    // Update Step 2 label to completed state
+    const s2Icon = document.getElementById('step2Icon');
+    const s2Label = document.getElementById('step2Label');
+    if (s2Icon) s2Icon.style.color = 'var(--accent-emerald)';
+    if (s2Label) {
+      s2Label.style.color = 'var(--accent-emerald)';
+      s2Label.innerHTML = 'Step 2 — Fund Escrow <span style="font-weight:500;">(completed ✓)</span>';
+    }
+
+    // Update stepper and show post-funding actions
+    updateStepperToFunded(fundingContext.escrow.project);
+    showPostFundActions(fundingContext.escrow.project);
+
+    // 🎉 Celebration confetti
+    launchConfetti();
+
+  } catch (error) {
+    console.error('[FundEscrow] Error:', error);
+    txPendingEl.classList.add('hidden');
+    document.getElementById('txError').classList.remove('hidden');
+
+    let errorMsg = error.message || 'Funding failed. Please try again.';
+
+    // Clean up overly verbose ethers error messages
+    if (errorMsg.length > 300) {
+      errorMsg = errorMsg.slice(0, 300) + '…';
+    }
+
+    document.getElementById('txErrorMsg').textContent = errorMsg;
+    fundBtn.disabled = false;
+    fundBtn.innerHTML = '<span class="material-symbols-outlined">lock</span> Retry Funding';
+  }
+}
+
+/* ── Stepper Update ── */
+function updateStepperToFunded(projectId) {
+  const step2 = document.getElementById('step2');
+  const step3 = document.getElementById('step3');
+  if (step2) {
+    step2.className = 'stepper-step completed';
+    step2.querySelector('.stepper-dot').innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">check</span>';
+    step2.querySelector('.stepper-label').style.color = 'var(--accent-emerald)';
+  }
+  if (step3) {
+    step3.className = 'stepper-step active';
+    step3.querySelector('.stepper-dot').innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">rocket_launch</span>';
+    step3.querySelector('.stepper-label').style.color = 'var(--accent-indigo)';
+  }
+}
+
+/* ── Post-Fund Actions ── */
+function showPostFundActions(projectId) {
+  const actions = document.getElementById('postFundActions');
+  if (actions) {
+    actions.classList.remove('hidden');
+    document.getElementById('msgFreelancerBtn').href = `/chat/?project=${projectId}`;
+    document.getElementById('goWorkspaceBtn').href = `/client/workspace/${projectId}/`;
+  }
+}
+
+/* ── Confetti ── */
+function launchConfetti() {
+  const canvas = document.getElementById('confettiCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const colors = ['#818cf8', '#a78bfa', '#34d399', '#fbbf24', '#38bdf8', '#fb7185', '#c084fc'];
+  const particles = [];
+
+  for (let i = 0; i < 150; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height - canvas.height,
+      w: Math.random() * 8 + 4,
+      h: Math.random() * 6 + 2,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      speedY: Math.random() * 3 + 2,
+      speedX: (Math.random() - 0.5) * 4,
+      rotation: Math.random() * 360,
+      rotSpeed: (Math.random() - 0.5) * 10,
+      opacity: 1,
+    });
+  }
+
+  let frame = 0;
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    particles.forEach(p => {
+      if (p.opacity <= 0) return;
+      alive = true;
+      p.y += p.speedY;
+      p.x += p.speedX;
+      p.rotation += p.rotSpeed;
+      if (p.y > canvas.height * 0.8) p.opacity -= 0.015;
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate((p.rotation * Math.PI) / 180);
+      ctx.globalAlpha = Math.max(0, p.opacity);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    });
+    frame++;
+    if (alive && frame < 300) requestAnimationFrame(animate);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  animate();
+}
+
+/* ── MetaMask Event Listeners ── */
+if (window.ethereum) {
+  window.ethereum.on('accountsChanged', async (accounts) => {
+    // If user switches accounts in MetaMask, reset — they must re-connect
+    if (accounts.length === 0) {
+      connectedWallet = '';
+      updateWalletUi('', null);
+    } else {
+      connectedWallet = accounts[0];
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      updateWalletUi(connectedWallet, chainId);
+    }
+  });
+
+  window.ethereum.on('chainChanged', (chainId) => {
+    // Update UI when network changes (e.g. switch to/from Sepolia)
+    if (connectedWallet) {
+      updateWalletUi(connectedWallet, chainId);
+    }
+  });
+}
+
+/* ── Initialize ── */
+loadFundingContext();
+</script>
+</body>
+</html>

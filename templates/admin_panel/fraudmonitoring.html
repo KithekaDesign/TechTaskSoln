@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TechTaskSoln Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#add8e6",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#141c1e",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    
+        // Add this at the top of the <script> block in each admin template
+document.addEventListener('DOMContentLoaded', async () => {
+    const user = await getCurrentUser(); // your existing api.js helper
+    if (!user || !user.is_staff) {
+        window.location.href = '/login/';
+        return;
+    }
+    // ... rest of page init
+});
+    
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Top Navigation -->
+<header class="flex items-center justify-between border-b border-primary/20 bg-background-light dark:bg-background-dark px-10 py-4 sticky top-0 z-50">
+<button id="hamburger-btn" onclick="toggleSidebar()" class="flex items-center justify-center size-10 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300 mr-4" aria-label="Toggle sidebar">
+    <span class="material-symbols-outlined text-2xl">menu</span>
+</button>
+<div class="flex items-center gap-8">
+<a href="/" class="flex items-center gap-4 no-underline">
+<div class="p-2 bg-primary rounded-lg text-slate-900">
+<span class="material-symbols-outlined">shield_person</span>
+</div>
+<h2 class="text-xl font-bold tracking-tight">TechTaskSoln Admin</h2>
+</a>
+<div class="hidden md:flex flex-col min-w-40 !h-10 max-w-64">
+<div class="flex w-full flex-1 items-stretch rounded-lg bg-primary/10 border border-primary/20 overflow-hidden">
+<div class="flex items-center justify-center pl-4 text-slate-500">
+<span class="material-symbols-outlined text-xl">search</span>
+</div>
+<input class="w-full bg-transparent border-none focus:ring-0 text-sm placeholder:text-slate-500" placeholder="Search accounts, tx IDs..." value=""/>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex gap-2">
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-primary/10 text-slate-900 dark:text-slate-100 hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-primary/10 text-slate-900 dark:text-slate-100 hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+<div class="h-10 w-10 rounded-full bg-primary flex items-center justify-center font-bold text-slate-900">JD</div>
+</div>
+</header>
+<div class="flex flex-1">
+<!-- Sidebar Navigation -->
+<!-- Main Content Area -->
+<main class="min-h-screen">
+<div class="max-w-6xl mx-auto space-y-8">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+<div>
+<h1 class="text-3xl font-black tracking-tight">Fraud Monitoring Panel</h1>
+<p class="text-slate-500 mt-1">Real-time surveillance and blockchain escrow tracking</p>
+</div>
+<div class="flex gap-3">
+<button class="bg-primary hover:bg-primary/80 text-slate-900 font-bold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-lg">refresh</span> Update Rules
+                            </button>
+</div>
+</div>
+<!-- Statistics Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="bg-white dark:bg-background-dark/50 border border-primary/10 rounded-xl p-6 shadow-sm">
+<p class="text-slate-500 text-sm font-medium">Total Alerts (24h)</p>
+<div class="flex items-baseline gap-2 mt-2">
+<h3 class="text-2xl font-bold">1,284</h3>
+<span class="text-green-600 text-xs font-bold">+12%</span>
+</div>
+</div>
+<div class="bg-white dark:bg-background-dark/50 border border-primary/10 rounded-xl p-6 shadow-sm">
+<p class="text-slate-500 text-sm font-medium">High Severity</p>
+<div class="flex items-baseline gap-2 mt-2">
+<h3 class="text-2xl font-bold">42</h3>
+<span class="text-red-500 text-xs font-bold">-5.2%</span>
+</div>
+</div>
+<div class="bg-white dark:bg-background-dark/50 border border-primary/10 rounded-xl p-6 shadow-sm">
+<p class="text-slate-500 text-sm font-medium">Escrow Volume</p>
+<div class="flex items-baseline gap-2 mt-2">
+<h3 class="text-2xl font-bold">$1.24M</h3>
+<span class="text-green-600 text-xs font-bold">+18%</span>
+</div>
+</div>
+<div class="bg-white dark:bg-background-dark/50 border border-primary/10 rounded-xl p-6 shadow-sm">
+<p class="text-slate-500 text-sm font-medium">Active Disputes</p>
+<div class="flex items-baseline gap-2 mt-2">
+<h3 class="text-2xl font-bold">15</h3>
+<span class="text-primary text-xs font-bold">Pending</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- AI Fraud Alerts Section -->
+<div class="lg:col-span-2 space-y-4">
+<div class="flex items-center justify-between mb-2">
+<h2 class="text-xl font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">analytics</span> AI Fraud Alerts
+                                </h2>
+<button class="text-sm text-primary font-bold hover:underline">View All</button>
+</div>
+<div class="space-y-3">
+<!-- Alert Item 1 -->
+<div class="bg-white dark:bg-background-dark/50 border border-primary/10 rounded-xl p-4 flex items-center justify-between group hover:border-primary/40 transition-all">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center">
+<span class="material-symbols-outlined">emergency_home</span>
+</div>
+<div>
+<h4 class="font-bold text-sm">Multiple accounts from same IP</h4>
+<p class="text-xs text-slate-500 mt-0.5">User: <span class="text-slate-800 dark:text-slate-200 font-medium">crypto_lord_99</span> • 14 mins ago</p>
+<div class="mt-2 flex gap-2">
+<span class="px-2 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-600 text-[10px] font-bold uppercase rounded">High Severity</span>
+<span class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold uppercase rounded">IP: 192.168.1.42</span>
+</div>
+</div>
+</div>
+<button class="bg-background-light dark:bg-background-dark border border-primary/20 text-xs font-bold px-4 py-2 rounded-lg hover:bg-primary hover:text-slate-900 transition-all">Investigate</button>
+</div>
+<!-- Alert Item 2 -->
+<div class="bg-white dark:bg-background-dark/50 border border-primary/10 rounded-xl p-4 flex items-center justify-between group hover:border-primary/40 transition-all">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-600 flex items-center justify-center">
+<span class="material-symbols-outlined">payments</span>
+</div>
+<div>
+<h4 class="font-bold text-sm">Rapid payment release</h4>
+<p class="text-xs text-slate-500 mt-0.5">User: <span class="text-slate-800 dark:text-slate-200 font-medium">dev_mike</span> • 45 mins ago</p>
+<div class="mt-2 flex gap-2">
+<span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/40 text-amber-600 text-[10px] font-bold uppercase rounded">Medium Severity</span>
+<span class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold uppercase rounded">Tx: #0x4...9e1</span>
+</div>
+</div>
+</div>
+<button class="bg-background-light dark:bg-background-dark border border-primary/20 text-xs font-bold px-4 py-2 rounded-lg hover:bg-primary hover:text-slate-900 transition-all">Investigate</button>
+</div>
+<!-- Alert Item 3 -->
+<div class="bg-white dark:bg-background-dark/50 border border-primary/10 rounded-xl p-4 flex items-center justify-between group hover:border-primary/40 transition-all">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center">
+<span class="material-symbols-outlined">chat</span>
+</div>
+<div>
+<h4 class="font-bold text-sm">Suspicious chat keywords</h4>
+<p class="text-xs text-slate-500 mt-0.5">User: <span class="text-slate-800 dark:text-slate-200 font-medium">anon_hunter</span> • 1 hour ago</p>
+<div class="mt-2 flex gap-2">
+<span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-600 text-[10px] font-bold uppercase rounded">Low Severity</span>
+<span class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold uppercase rounded">"telegram offsite"</span>
+</div>
+</div>
+</div>
+<button class="bg-background-light dark:bg-background-dark border border-primary/20 text-xs font-bold px-4 py-2 rounded-lg hover:bg-primary hover:text-slate-900 transition-all">Investigate</button>
+</div>
+</div>
+</div>
+<!-- Blockchain Monitoring Section -->
+<div class="space-y-4">
+<h2 class="text-xl font-bold flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary">link</span> Escrow Pulse
+                            </h2>
+<div class="bg-white dark:bg-background-dark/50 border border-primary/10 rounded-xl p-1 overflow-hidden">
+<div class="divide-y divide-primary/5">
+<!-- Escrow Row 1 -->
+<div class="p-4 flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<div class="text-xs font-mono text-slate-400">#0x21a...fb32</div>
+<span class="text-xs font-bold text-green-500 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Verified
+                                            </span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-bold text-lg">4,200 USDT</span>
+<span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">In Escrow</span>
+</div>
+<div class="flex gap-2 text-[10px] text-slate-500 uppercase tracking-wide font-bold">
+<span>Buyer: 0x82...12</span>
+<span class="text-primary">→</span>
+<span>Seller: 0x9f...44</span>
+</div>
+</div>
+<!-- Escrow Row 2 -->
+<div class="p-4 flex flex-col gap-2 bg-primary/5">
+<div class="flex justify-between items-start">
+<div class="text-xs font-mono text-slate-400">#0x4d1...88c2</div>
+<span class="text-xs font-bold text-amber-500 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">pending</span> Validating
+                                            </span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-bold text-lg">0.154 BTC</span>
+<span class="text-xs bg-slate-200 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-full">Releasing</span>
+</div>
+<div class="flex gap-2 text-[10px] text-slate-500 uppercase tracking-wide font-bold">
+<span>Buyer: bc1q...r9</span>
+<span class="text-primary">→</span>
+<span>Seller: bc1p...z0</span>
+</div>
+</div>
+<!-- Escrow Row 3 -->
+<div class="p-4 flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<div class="text-xs font-mono text-slate-400">#0xef9...aa11</div>
+<span class="text-xs font-bold text-blue-500 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">history</span> Confirmed
+                                            </span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-bold text-lg">15,000 USDC</span>
+<span class="text-xs bg-green-100 dark:bg-green-900/30 text-green-600 px-2 py-0.5 rounded-full">Completed</span>
+</div>
+<div class="flex gap-2 text-[10px] text-slate-500 uppercase tracking-wide font-bold">
+<span>Buyer: 0x11...ff</span>
+<span class="text-primary">→</span>
+<span>Seller: 0x33...aa</span>
+</div>
+</div>
+</div>
+<div class="bg-primary/10 p-3 text-center">
+<p class="text-[10px] text-slate-600 dark:text-slate-400 font-medium">Monitoring 248 active chains</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Chart/Overview Section -->
+<div class="bg-white dark:bg-background-dark/50 border border-primary/10 rounded-xl p-8 shadow-sm">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h3 class="font-bold text-lg">Risk Distribution</h3>
+<p class="text-sm text-slate-500">Correlation between chat activity and payment release speed</p>
+</div>
+<div class="flex gap-2">
+<span class="flex items-center gap-2 text-xs font-medium"><span class="w-3 h-3 rounded-full bg-primary"></span> Safe</span>
+<span class="flex items-center gap-2 text-xs font-medium"><span class="w-3 h-3 rounded-full bg-red-400"></span> High Risk</span>
+</div>
+</div>
+<div class="h-48 w-full bg-primary/5 rounded-xl border border-dashed border-primary/30 flex items-center justify-center relative overflow-hidden">
+<!-- Abstract Chart Background Pattern -->
+<div class="absolute inset-0 opacity-10 flex items-end">
+<div class="w-full h-2/3 bg-gradient-to-t from-primary to-transparent"></div>
+</div>
+<div class="relative z-10 flex flex-col items-center gap-2">
+<span class="material-symbols-outlined text-4xl text-primary">monitoring</span>
+<p class="text-sm font-bold text-slate-400">Predictive Risk Map Generating...</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/sidebar.js"></script>
+</body></html>

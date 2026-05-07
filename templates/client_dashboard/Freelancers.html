@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Browse Freelancers | TechTaskSoln</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "primary": "#add8e6",
+                    "navy": "#1e3a8a",
+                    "background-light": "#f6f7f8",
+                    "background-dark": "#141c1e",
+                },
+                fontFamily: { "display": ["Manrope", "sans-serif"] },
+                borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+        },
+    }
+</script>
+<style>
+    body { font-family: 'Manrope', sans-serif; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .cat-pill { cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .cat-pill.active { background: #add8e6 !important; color: #0f172a !important; border-color: #add8e6 !important; }
+    .freelancer-card { transition: all 0.2s; }
+    .freelancer-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.1); }
+    @keyframes shimmer { 0% { background-position: -200px 0; } 100% { background-position: calc(200px + 100%) 0; } }
+    .skeleton { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200px 100%; animation: shimmer 1.5s infinite; border-radius: 0.75rem; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-box { background: white; border-radius: 16px; padding: 2rem; max-width: 480px; width: 100%; }
+    .dark .modal-box { background: #1e293b; }
+</style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/sidebar.js"></script>
+
+<!-- Hire Modal -->
+<div id="hire-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="text-lg font-bold">Hire Freelancer</h3>
+            <button onclick="closeHireModal()" class="text-slate-400 hover:text-slate-600">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <div id="modal-freelancer-info" class="flex items-center gap-3 mb-5 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"></div>
+
+        <div class="mb-4">
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Select Project <span class="text-red-500">*</span></label>
+            <select id="modal-project-select" class="w-full h-11 px-4 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary text-slate-900 dark:text-white text-sm">
+                <option value="">Loading your projects...</option>
+            </select>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Cover Message</label>
+            <textarea id="modal-message" rows="3" placeholder="Introduce yourself and explain why this freelancer is a good fit..." class="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary text-slate-900 dark:text-white text-sm resize-none"></textarea>
+        </div>
+
+        <div class="mb-5">
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Proposed Budget ($)</label>
+            <input type="number" id="modal-budget" placeholder="Enter your budget offer" min="1"
+                class="w-full h-11 px-4 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary text-slate-900 dark:text-white text-sm"/>
+        </div>
+
+        <div class="flex gap-3">
+            <button onclick="closeHireModal()" class="flex-1 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors">
+                Cancel
+            </button>
+            <button onclick="submitHireRequest()" id="hire-submit-btn" class="flex-1 py-2.5 rounded-lg bg-navy text-white font-bold text-sm hover:opacity-90 transition-all flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-base">send</span>
+                <span id="hire-submit-text">Send Invitation</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Main Layout -->
+<div class="flex min-h-screen">
+    <!-- Sidebar injected by sidebar.js -->
+
+    <!-- Content -->
+    <div class="flex-1 flex flex-col" id="fl-main-content">
+
+        <!-- Top Nav -->
+        <header class="sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-3 flex items-center gap-4">
+            <button onclick="toggleSidebar()" class="flex items-center justify-center size-9 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+            <div class="flex items-center gap-2 flex-1 max-w-md">
+                <span class="material-symbols-outlined text-slate-400">search</span>
+                <input id="search-input" type="text" placeholder="Search freelancers, skills..."
+                    class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm border-none focus:ring-2 focus:ring-primary"/>
+            </div>
+            <div class="ml-auto flex items-center gap-3">
+                <a href="/notifications/" class="size-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600">
+                    <span class="material-symbols-outlined">notifications</span>
+                </a>
+                <div id="fl-nav-avatar" class="size-9 rounded-full bg-primary/20 flex items-center justify-center font-bold text-navy text-sm cursor-pointer" onclick="logout()">U</div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <main class="flex-1 p-6 md:p-8 max-w-7xl mx-auto w-full">
+            <div class="mb-6">
+                <h1 class="text-2xl font-extrabold tracking-tight">Browse Freelancers</h1>
+                <p class="text-slate-500 mt-1 text-sm">Find the best technical experts for your next mission-critical project.</p>
+            </div>
+
+            <!-- Category Pills -->
+            <div class="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide" id="category-pills"></div>
+
+            <!-- Stats bar -->
+            <div class="flex items-center justify-between mb-5">
+                <p class="text-sm text-slate-500" id="results-count">Loading freelancers...</p>
+                <select id="sort-select" class="text-sm border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary">
+                    <option value="rating">Sort: Top Rated</option>
+                    <option value="rate_asc">Rate: Low to High</option>
+                    <option value="rate_desc">Rate: High to Low</option>
+                    <option value="projects">Most Projects</option>
+                </select>
+            </div>
+
+            <!-- Freelancers Grid -->
+            <div id="freelancers-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <!-- Skeleton loaders -->
+                ${Array(6).fill('<div class="skeleton h-64"></div>').join('')}
+            </div>
+
+            <!-- Empty state -->
+            <div id="empty-state" class="hidden text-center py-20">
+                <span class="material-symbols-outlined text-5xl text-slate-200">person_search</span>
+                <h3 class="text-lg font-bold text-slate-400 mt-4">No freelancers found</h3>
+                <p class="text-slate-400 mt-2 text-sm">Try a different category or search term.</p>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+const CATEGORIES = [
+    { key: 'all', label: 'All Talent', icon: 'group' },
+    { key: 'web_development', label: 'Web Development', icon: 'code' },
+    { key: 'mobile_development', label: 'App Development', icon: 'smartphone' },
+    { key: 'data_science', label: 'Data Science', icon: 'analytics' },
+    { key: 'ai_ml', label: 'AI & ML', icon: 'psychology' },
+    { key: 'devops_cloud', label: 'Cloud & DevOps', icon: 'cloud' },
+    { key: 'cybersecurity', label: 'Cybersecurity', icon: 'security' },
+    { key: 'ui_ux_design', label: 'UI/UX Design', icon: 'design_services' },
+    { key: 'blockchain', label: 'Blockchain', icon: 'currency_bitcoin' },
+];
+
+let activeCategory = new URLSearchParams(window.location.search).get('category') || 'all';
+let allFreelancers = [];
+let filteredFreelancers = [];
+let clientProjects = [];
+let selectedFreelancer = null;
+let userInfo = null;
+
+(async function init() {
+    if (!requireAuth()) return;
+    userInfo = await fetchUserInfo();
+
+    if (userInfo) {
+        const initial = (userInfo.username || 'U')[0].toUpperCase();
+        document.getElementById('fl-nav-avatar').textContent = initial;
+    }
+
+    renderCategoryPills();
+
+    // Load freelancers and client projects in parallel
+    const [flRes, projRes] = await Promise.all([
+        fetch('/api/auth/freelancers/public/', { headers: { 'Content-Type': 'application/json' } }),
+        userInfo?.is_client ? apiCall('/projects/') : Promise.resolve(null)
+    ]);
+
+    if (flRes.ok) {
+        const data = await flRes.json();
+        allFreelancers = data.results || data;
+    }
+
+    if (projRes && projRes.ok) {
+        const data = await projRes.json();
+        clientProjects = (data.results || data).filter(p => p.client === userInfo.id && p.status === 'OPEN');
+    }
+
+    filterAndRender();
+
+    // Search
+    document.getElementById('search-input').addEventListener('input', filterAndRender);
+    document.getElementById('sort-select').addEventListener('change', filterAndRender);
+})();
+
+function renderCategoryPills() {
+    const container = document.getElementById('category-pills');
+    container.innerHTML = CATEGORIES.map(c => `
+        <button class="cat-pill flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-semibold
+            ${activeCategory === c.key ? 'active' : 'border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-primary bg-white dark:bg-slate-900'}"
+            onclick="selectCategory('${c.key}')">
+            <span class="material-symbols-outlined" style="font-size:16px">${c.icon}</span>
+            ${c.label}
+        </button>
+    `).join('');
+}
+
+function selectCategory(key) {
+    activeCategory = key;
+    const url = new URL(window.location);
+    if (key === 'all') url.searchParams.delete('category');
+    else url.searchParams.set('category', key);
+    window.history.replaceState({}, '', url);
+    renderCategoryPills();
+    filterAndRender();
+}
+
+function filterAndRender() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    const sort = document.getElementById('sort-select').value;
+
+    filteredFreelancers = allFreelancers.filter(f => {
+        const matchCat = activeCategory === 'all' || f.category === activeCategory;
+        const matchSearch = !search ||
+            (f.username || '').toLowerCase().includes(search) ||
+            (f.skills || '').toLowerCase().includes(search) ||
+            (f.category || '').toLowerCase().includes(search);
+        return matchCat && matchSearch;
+    });
+
+    // Sort
+    filteredFreelancers.sort((a, b) => {
+        if (sort === 'rating') return (b.rating || 0) - (a.rating || 0);
+        if (sort === 'rate_asc') return (a.hourly_rate || 0) - (b.hourly_rate || 0);
+        if (sort === 'rate_desc') return (b.hourly_rate || 0) - (a.hourly_rate || 0);
+        if (sort === 'projects') return (b.completed_projects || 0) - (a.completed_projects || 0);
+        return 0;
+    });
+
+    document.getElementById('results-count').textContent =
+        `${filteredFreelancers.length} freelancer${filteredFreelancers.length !== 1 ? 's' : ''} found`;
+
+    renderGrid();
+}
+
+function renderGrid() {
+    const grid = document.getElementById('freelancers-grid');
+    const empty = document.getElementById('empty-state');
+
+    if (filteredFreelancers.length === 0) {
+        grid.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+    }
+
+    empty.classList.add('hidden');
+    grid.innerHTML = filteredFreelancers.map(f => {
+        const initial = (f.username || 'F')[0].toUpperCase();
+        const rating = parseFloat(f.rating || 4.5).toFixed(1);
+        const rate = f.hourly_rate ? `$${f.hourly_rate}/hr` : 'Rate negotiable';
+        const skills = (f.skills || '').split(',').map(s => s.trim()).filter(Boolean).slice(0, 3);
+        const expLabel = { 'entry': 'Entry Level', 'intermediate': 'Intermediate', 'expert': 'Expert' }[f.experience_level] || f.experience_level || 'Experienced';
+        const categoryLabel = CATEGORIES.find(c => c.key === f.category)?.label || f.category || 'Tech';
+
+        return `
+            <div class="freelancer-card bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div class="p-5">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="relative">
+                                <div class="size-12 rounded-full bg-primary/20 flex items-center justify-center font-bold text-navy dark:text-primary text-lg">
+                                    ${initial}
+                                </div>
+                                <div class="absolute bottom-0 right-0 size-3 rounded-full border-2 border-white bg-green-500"></div>
+                            </div>
+                            <div>
+                                <p class="font-bold text-sm">${[f.first_name, f.last_name].filter(Boolean).join(' ') || f.username || 'Freelancer'}</p>
+                                <p class="text-xs text-slate-500">${expLabel}</p>
+                                ${f.email ? `<p class="text-[10px] text-slate-400 truncate max-w-[160px]">${f.email}</p>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1 text-amber-500">
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">star</span>
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">${rating}</span>
+                        </div>
+                    </div>
+
+                    <span class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-navy dark:text-primary border border-primary/20 mb-3">
+                        ${categoryLabel}
+                    </span>
+
+                    ${skills.length > 0 ? `
+                        <div class="flex flex-wrap gap-1.5 mb-4">
+                            ${skills.map(s => `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-xs font-semibold text-slate-600 dark:text-slate-400">${s.toUpperCase()}</span>`).join('')}
+                        </div>
+                    ` : ''}
+
+                    <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold">Rate</p>
+                            <p class="font-bold text-sm">${rate}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] text-slate-400 uppercase font-bold">Projects</p>
+                            <p class="font-bold text-sm">${f.completed_projects || 0}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-5 pb-5 flex gap-2">
+                    <a href="/freelancer/profile/${f.id}/" class="flex-1 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-center text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                        View Profile
+                    </a>
+                    ${userInfo?.is_client ? `
+                        <button onclick="openHireModal(${JSON.stringify(f).replace(/"/g, '&quot;')})"
+                            class="flex-1 py-2 rounded-lg bg-navy text-white text-xs font-bold hover:opacity-90 transition-all flex items-center justify-center gap-1">
+                            <span class="material-symbols-outlined" style="font-size:14px">handshake</span> Hire
+                        </button>
+                    ` : `
+                        <a href="/login/" class="flex-1 py-2 rounded-lg bg-slate-100 text-slate-600 text-xs font-bold text-center hover:bg-slate-200 transition-colors">
+                            Login to Hire
+                        </a>
+                    `}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function openHireModal(freelancer) {
+    selectedFreelancer = freelancer;
+
+    // Fill freelancer info
+    const initial = (freelancer.username || 'F')[0].toUpperCase();
+    document.getElementById('modal-freelancer-info').innerHTML = `
+        <div class="size-10 rounded-full bg-primary/20 flex items-center justify-center font-bold text-navy text-sm">${initial}</div>
+        <div>
+            <p class="font-bold text-sm">${freelancer.username || 'Freelancer'}</p>
+            <p class="text-xs text-slate-500">${freelancer.hourly_rate ? '$' + freelancer.hourly_rate + '/hr' : 'Rate negotiable'}</p>
+        </div>
+    `;
+
+    // Fill projects
+    const select = document.getElementById('modal-project-select');
+    if (clientProjects.length === 0) {
+        select.innerHTML = '<option value="">No open projects — post one first</option>';
+    } else {
+        select.innerHTML = '<option value="">Select a project...</option>' +
+            clientProjects.map(p => `<option value="${p.id}">${p.title} ($${parseFloat(p.budget).toLocaleString()})</option>`).join('');
+    }
+
+    document.getElementById('hire-modal').classList.remove('hidden');
+}
+
+function closeHireModal() {
+    document.getElementById('hire-modal').classList.add('hidden');
+    selectedFreelancer = null;
+    document.getElementById('modal-message').value = '';
+    document.getElementById('modal-budget').value = '';
+}
+
+async function submitHireRequest() {
+    const projectId = document.getElementById('modal-project-select').value;
+    const message = document.getElementById('modal-message').value.trim();
+    const budget = document.getElementById('modal-budget').value;
+
+    if (!projectId) { showAlert('Please select a project.', 'error'); return; }
+    if (!budget || parseFloat(budget) <= 0) { showAlert('Please enter a budget offer.', 'error'); return; }
+
+    const btn = document.getElementById('hire-submit-btn');
+    const btnText = document.getElementById('hire-submit-text');
+    btn.disabled = true;
+    btnText.textContent = 'Sending...';
+
+    // Create an invitation by posting a message to the project chat
+    // and creating a notification for the freelancer
+    const notifRes = await apiCall('/notifications/', 'POST', {
+        message: `Client wants to hire you for project #${projectId}. Message: "${message || 'Interested in working with you!'}" Budget offer: $${budget}`,
+        user: selectedFreelancer.user_id || selectedFreelancer.id
+    });
+
+    // Also post to project messages as a hiring request
+    const msgRes = await apiCall('/messages/', 'POST', {
+        project: parseInt(projectId),
+        content: `🤝 Hiring invitation sent to ${selectedFreelancer.username}. Budget offer: $${budget}. ${message || ''}`
+    });
+
+    btn.disabled = false;
+    btnText.textContent = 'Send Invitation';
+    closeHireModal();
+
+    if (msgRes && msgRes.ok) {
+        showAlert(`Invitation sent to ${selectedFreelancer.username}! They'll be notified.`, 'success');
+    } else {
+        showAlert('Invitation sent, but there was a minor issue logging the message.', 'info');
+    }
+}
+
+// Close modal on backdrop click
+document.getElementById('hire-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeHireModal();
+});
+</script>
+</body>
+</html>

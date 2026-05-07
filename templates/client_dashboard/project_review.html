@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Review & Release | TechTaskSoln</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: { "primary": "#add8e6", "navy": "#1e293b", "background-light": "#f6f7f8", "background-dark": "#141c1e" },
+          fontFamily: { "display": ["Manrope", "sans-serif"] },
+        },
+      },
+    }
+  </script>
+  <style>
+    body { font-family: 'Manrope', sans-serif; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 1s linear infinite; }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen">
+
+<!-- HEADER -->
+<header class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 lg:px-10 py-3 bg-white dark:bg-background-dark sticky top-0 z-50">
+  <a href="/" class="flex items-center gap-3 no-underline">
+    <div class="size-8 flex items-center justify-center bg-primary rounded-lg">
+      <span class="material-symbols-outlined text-slate-900 text-lg">terminal</span>
+    </div>
+    <h2 class="text-slate-900 dark:text-slate-100 text-lg font-bold">TechTaskSoln</h2>
+  </a>
+  <nav class="hidden md:flex items-center gap-6 text-sm text-slate-600 dark:text-slate-400 font-medium">
+    <a href="/client/dashboard/" class="hover:text-primary">Dashboard</a>
+    <a href="/client/projects/" class="hover:text-primary">Projects</a>
+    <a href="/client/proposals/" class="hover:text-primary">Proposals</a>
+  </nav>
+  <div class="flex items-center gap-3">
+    <a href="/notifications/" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+      <span class="material-symbols-outlined text-slate-600">notifications</span>
+    </a>
+    <button onclick="logout()" class="text-slate-400 hover:text-red-500">
+      <span class="material-symbols-outlined">logout</span>
+    </button>
+  </div>
+</header>
+
+<!-- LOADING -->
+<div id="loadingState" class="flex flex-col items-center justify-center py-32">
+  <div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full spinner mb-4"></div>
+  <p class="text-slate-400 text-sm">Loading project details...</p>
+</div>
+
+<!-- ERROR -->
+<div id="errorState" class="hidden text-center py-32">
+  <span class="material-symbols-outlined text-5xl text-slate-300 block mb-3">error</span>
+  <p id="errorMessage" class="text-slate-500 font-semibold">Project not found.</p>
+  <a href="/client/projects/" class="inline-block mt-4 text-primary text-sm font-semibold hover:underline">← Back to Projects</a>
+</div>
+
+<!-- MAIN -->
+<main id="mainContent" class="hidden max-w-3xl mx-auto px-6 py-10">
+
+  <!-- Breadcrumb -->
+  <div class="flex items-center gap-2 text-sm text-slate-400 mb-6">
+    <a href="/client/projects/" class="hover:text-primary">Projects</a>
+    <span class="material-symbols-outlined text-sm">chevron_right</span>
+    <span class="text-slate-600 dark:text-slate-300">Review & Release</span>
+  </div>
+
+  <!-- Project Info Card -->
+  <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden mb-6">
+    <div class="h-2 bg-gradient-to-r from-green-400 via-emerald-500 to-teal-500"></div>
+    <div class="p-8">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+          <span class="material-symbols-outlined text-green-600 text-2xl">task_alt</span>
+        </div>
+        <div>
+          <h1 id="projectTitle" class="text-2xl font-bold text-slate-900 dark:text-white">—</h1>
+          <p class="text-sm text-slate-400">Project marked as completed — review and release funds</p>
+        </div>
+      </div>
+
+      <!-- Project Details Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
+          <p class="text-xs text-slate-400 mb-1">Status</p>
+          <span id="projectStatus" class="inline-block px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">COMPLETED</span>
+        </div>
+        <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
+          <p class="text-xs text-slate-400 mb-1">Budget</p>
+          <p id="projectBudget" class="text-lg font-bold text-slate-900 dark:text-white">—</p>
+        </div>
+        <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
+          <p class="text-xs text-slate-400 mb-1">Freelancer</p>
+          <p id="freelancerName" class="text-sm font-bold text-slate-900 dark:text-white">—</p>
+        </div>
+        <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
+          <p class="text-xs text-slate-400 mb-1">Escrow</p>
+          <p id="escrowAmount" class="text-lg font-bold text-navy dark:text-primary">—</p>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="mb-6">
+        <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-2">Project Description</p>
+        <p id="projectDescription" class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">—</p>
+      </div>
+
+      <!-- Escrow Transaction Info -->
+      <div id="escrowInfo" class="hidden mb-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+        <p class="text-xs text-blue-400 uppercase tracking-wider font-semibold mb-2">Escrow Details</p>
+        <div class="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <p class="text-xs text-slate-400">Client Wallet</p>
+            <p id="clientWallet" class="font-mono text-xs text-slate-600 dark:text-slate-400 break-all">—</p>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400">Freelancer Wallet</p>
+            <p id="freelancerWallet" class="font-mono text-xs text-slate-600 dark:text-slate-400 break-all">—</p>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400">Funded TX</p>
+            <a id="fundedTxLink" href="#" target="_blank" class="text-xs text-primary hover:underline font-mono">—</a>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400">Escrow Status</p>
+            <p id="escrowStatus" class="text-xs font-bold">—</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div id="actionButtons" class="flex flex-col sm:flex-row gap-3">
+        <button id="releaseBtn" onclick="releaseFunds()" class="flex-1 flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold text-base hover:brightness-110 transition-all shadow-lg">
+          <span class="material-symbols-outlined text-xl">payments</span> Approve & Release Funds
+        </button>
+        <button id="disputeBtn" onclick="raiseDispute()" class="flex items-center justify-center gap-2 px-6 py-4 border-2 border-orange-300 text-orange-600 rounded-xl font-bold text-sm hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all">
+          <span class="material-symbols-outlined text-lg">gavel</span> Raise Dispute
+        </button>
+      </div>
+
+      <!-- TX Status -->
+      <div id="txStatus" class="hidden mt-6">
+        <div id="txPending" class="hidden flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200">
+          <div class="w-6 h-6 border-3 border-amber-500 border-t-transparent rounded-full spinner"></div>
+          <p class="text-sm font-bold text-amber-800 dark:text-amber-400">Transaction pending...</p>
+        </div>
+        <div id="txSuccess" class="hidden flex flex-col gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-green-600 text-3xl">verified</span>
+            <div>
+              <p id="txSuccessTitle" class="text-lg font-bold text-green-800 dark:text-green-400">Funds Released!</p>
+              <p id="txSuccessMsg" class="text-xs text-green-600">The freelancer has been paid.</p>
+            </div>
+          </div>
+          <a id="releaseTxLink" href="#" target="_blank" class="flex items-center gap-2 text-sm text-primary font-semibold hover:underline">
+            <span class="material-symbols-outlined text-sm">open_in_new</span> View on Sepolia Etherscan
+          </a>
+        </div>
+        <div id="txError" class="hidden flex items-center gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200">
+          <span class="material-symbols-outlined text-red-500">error</span>
+          <p id="txErrorMsg" class="text-sm text-red-700">Transaction failed.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="/static/js/api.js"></script>
+<script>
+if (!isLoggedIn()) window.location.href = '/login/';
+
+const pathParts = window.location.pathname.split('/').filter(Boolean);
+const projectId = pathParts[pathParts.length - 2]; // /client/projects/<id>/review/
+
+let projectData = null;
+let escrowData = null;
+
+async function loadProjectReview() {
+  try {
+    const token = localStorage.getItem('access_token');
+
+    // Load project
+    const projRes = await fetch(`/api/projects/${projectId}/`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!projRes.ok) throw new Error('Project not found');
+    projectData = await projRes.json();
+
+    document.getElementById('projectTitle').textContent = projectData.title;
+    document.getElementById('projectBudget').textContent = '$' + Number(projectData.budget).toLocaleString();
+    document.getElementById('projectDescription').textContent = projectData.description;
+
+    // Status check
+    const statusEl = document.getElementById('projectStatus');
+    const statusColors = { COMPLETED: 'bg-green-100 text-green-700', IN_PROGRESS: 'bg-blue-100 text-blue-700', OPEN: 'bg-slate-100 text-slate-600' };
+    statusEl.textContent = projectData.status;
+    statusEl.className = `inline-block px-2 py-1 rounded-full text-xs font-bold ${statusColors[projectData.status] || ''}`;
+
+    // Load escrow for this project
+    const escrowRes = await fetch('/api/blockchain/escrow/', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (escrowRes.ok) {
+      const escrows = await escrowRes.json();
+      const list = escrows.results || escrows;
+      escrowData = list.find(e => e.project == projectId);
+
+      if (escrowData) {
+        document.getElementById('escrowInfo').classList.remove('hidden');
+        document.getElementById('escrowAmount').textContent = escrowData.amount_eth + ' ETH';
+        document.getElementById('freelancerName').textContent = escrowData.freelancer_username;
+        document.getElementById('clientWallet').textContent = escrowData.client_wallet || 'N/A';
+        document.getElementById('freelancerWallet').textContent = escrowData.freelancer_wallet || 'N/A';
+        document.getElementById('escrowStatus').textContent = escrowData.status;
+
+        if (escrowData.tx_hash_funded) {
+          const link = document.getElementById('fundedTxLink');
+          link.href = `https://sepolia.etherscan.io/tx/${escrowData.tx_hash_funded}`;
+          link.textContent = escrowData.tx_hash_funded.slice(0, 10) + '...';
+        }
+
+        // If already released, hide action buttons
+        if (escrowData.status === 'RELEASED') {
+          document.getElementById('actionButtons').innerHTML = `
+            <div class="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 w-full">
+              <span class="material-symbols-outlined text-green-600 text-2xl">verified</span>
+              <p class="text-sm font-bold text-green-800 dark:text-green-400">Funds have already been released to the freelancer.</p>
+            </div>`;
+        }
+
+        if (escrowData.status === 'DISPUTED') {
+          document.getElementById('actionButtons').innerHTML = `
+            <div class="flex items-center gap-3 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-200 w-full">
+              <span class="material-symbols-outlined text-orange-600 text-2xl">gavel</span>
+              <p class="text-sm font-bold text-orange-700">This project is under dispute. An admin will review.</p>
+            </div>`;
+        }
+      }
+    }
+
+    // Load freelancer name from proposal
+    const proposalRes = await fetch(`/api/proposals/project/${projectId}/`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (proposalRes.ok) {
+      const proposals = await proposalRes.json();
+      const accepted = (proposals.results || proposals).find(p => p.status === 'ACCEPTED');
+      if (accepted) {
+        document.getElementById('freelancerName').textContent = accepted.freelancer_username;
+      }
+    }
+
+    document.getElementById('loadingState').classList.add('hidden');
+    document.getElementById('mainContent').classList.remove('hidden');
+
+  } catch (e) {
+    document.getElementById('loadingState').classList.add('hidden');
+    document.getElementById('errorMessage').textContent = e.message;
+    document.getElementById('errorState').classList.remove('hidden');
+  }
+}
+
+async function releaseFunds() {
+  if (!escrowData) { alert('No escrow data found.'); return; }
+  if (!confirm('Release funds to the freelancer? This action cannot be undone.')) return;
+
+  if (typeof window.ethereum === 'undefined') {
+    alert('MetaMask is not installed.');
+    return;
+  }
+
+  const releaseBtn = document.getElementById('releaseBtn');
+  const disputeBtn = document.getElementById('disputeBtn');
+  releaseBtn.disabled = true;
+  releaseBtn.innerHTML = '<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full spinner"></div> Processing...';
+  disputeBtn.disabled = true;
+
+  document.getElementById('txStatus').classList.remove('hidden');
+  document.getElementById('txPending').classList.remove('hidden');
+
+  try {
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    const fromAddress = accounts[0];
+
+    // Check network
+    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+    if (chainId !== '0xaa36a7') {
+      throw new Error('Please switch to Sepolia Testnet in MetaMask.');
+    }
+
+    // Call releaseFunds(projectId) on the contract
+    const contractAddr = localStorage.getItem('contract_address') || prompt('Enter contract address:');
+    if (!contractAddr) throw new Error('No contract address');
+    localStorage.setItem('contract_address', contractAddr);
+
+    // ABI-encode releaseFunds(string) correctly for the Solidity contract
+    const iface = new ethers.Interface([
+      'function releaseFunds(string memory projectId) external'
+    ]);
+    const data = iface.encodeFunctionData('releaseFunds', [String(projectId)]);
+
+    const txHash = await window.ethereum.request({
+      method: 'eth_sendTransaction',
+      params: [{ from: fromAddress, to: contractAddr, data: data }],
+    });
+
+    // Sync with Django
+    const token = localStorage.getItem('access_token');
+    await fetch(`/api/blockchain/escrow/${escrowData.id}/sync_status/`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tx_hash: txHash, tx_type: 'released' }),
+    });
+
+    document.getElementById('txPending').classList.add('hidden');
+    document.getElementById('txSuccess').classList.remove('hidden');
+    document.getElementById('txSuccessTitle').textContent = 'Funds Released Successfully!';
+    document.getElementById('txSuccessMsg').textContent = 'The freelancer has been paid and notified.';
+    document.getElementById('releaseTxLink').href = `https://sepolia.etherscan.io/tx/${txHash}`;
+    releaseBtn.classList.add('hidden');
+    disputeBtn.classList.add('hidden');
+
+  } catch (err) {
+    document.getElementById('txPending').classList.add('hidden');
+    document.getElementById('txError').classList.remove('hidden');
+    document.getElementById('txErrorMsg').textContent = err.code === 4001
+      ? 'Transaction rejected by user.'
+      : (err.message || 'Transaction failed.');
+    releaseBtn.disabled = false;
+    releaseBtn.innerHTML = '<span class="material-symbols-outlined text-xl">payments</span> Retry Release';
+    disputeBtn.disabled = false;
+  }
+}
+
+async function raiseDispute() {
+  if (!escrowData) { alert('No escrow data found.'); return; }
+  if (!confirm('Raise a dispute? This will flag the project for admin review.')) return;
+
+  if (typeof window.ethereum === 'undefined') {
+    alert('MetaMask is not installed.');
+    return;
+  }
+
+  const disputeBtn = document.getElementById('disputeBtn');
+  disputeBtn.disabled = true;
+  disputeBtn.innerHTML = '<div class="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full spinner"></div> Processing...';
+
+  document.getElementById('txStatus').classList.remove('hidden');
+  document.getElementById('txPending').classList.remove('hidden');
+
+  try {
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    const fromAddress = accounts[0];
+
+    const contractAddr = localStorage.getItem('contract_address') || prompt('Enter contract address:');
+    if (!contractAddr) throw new Error('No contract address');
+
+    // ABI-encode raiseDispute(string) correctly for the Solidity contract
+    const iface = new ethers.Interface([
+      'function raiseDispute(string memory projectId) external'
+    ]);
+    const data = iface.encodeFunctionData('raiseDispute', [String(projectId)]);
+
+    const txHash = await window.ethereum.request({
+      method: 'eth_sendTransaction',
+      params: [{ from: fromAddress, to: contractAddr, data: data }],
+    });
+
+    // Sync
+    const token = localStorage.getItem('access_token');
+    await fetch(`/api/blockchain/escrow/${escrowData.id}/sync_status/`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tx_hash: txHash, tx_type: 'disputed' }),
+    });
+
+    document.getElementById('txPending').classList.add('hidden');
+    document.getElementById('txSuccess').classList.remove('hidden');
+    document.getElementById('txSuccessTitle').textContent = 'Dispute Raised';
+    document.getElementById('txSuccessMsg').textContent = 'An admin will review this dispute.';
+    document.getElementById('releaseTxLink').href = `https://sepolia.etherscan.io/tx/${txHash}`;
+    document.getElementById('releaseBtn').classList.add('hidden');
+    disputeBtn.classList.add('hidden');
+
+  } catch (err) {
+    document.getElementById('txPending').classList.add('hidden');
+    document.getElementById('txError').classList.remove('hidden');
+    document.getElementById('txErrorMsg').textContent = err.message || 'Failed to raise dispute.';
+    disputeBtn.disabled = false;
+    disputeBtn.innerHTML = '<span class="material-symbols-outlined text-lg">gavel</span> Retry Dispute';
+  }
+}
+
+loadProjectReview();
+</script>
+</body>
+</html>
