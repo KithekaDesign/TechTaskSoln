@@ -4,8 +4,6 @@ TechTaskSoln — Freelancing Platform with Blockchain Escrow
 
 ---
 
-## 🔗 Live Demo
-https://your-ngrok-link-here
 
 ---
 
